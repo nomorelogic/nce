@@ -313,7 +313,7 @@ begin
   // init
   case APieceColor of
     pcWhite: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
-    pcBlack: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
+    pcBlack: SetOfPieces := [cpPawnBlack, cpRookBlack, cpKnightBlack, cpBishopBlack, cpQueenBlack,  cpKingBlack];
   end;
 
   // loop on cells
