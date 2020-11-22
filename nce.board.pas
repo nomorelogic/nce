@@ -5,7 +5,7 @@ unit nce.board;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, AvgLvlTree;
 
 type
   TPieceColor = (pcWhite, pcBlack);
@@ -17,6 +17,7 @@ type
                 cpBishopWhite, cpBishopBlack,  // bishop / alfiere
                 cpQueenWhite,  cpQueenBlack,   // queen  / regina, donna
                 cpKingWhite,   cpKingBlack);   // king   / re
+
   TPieceRange = cpPawnWhite..cpKingBlack;
 
   TPieceDescription = record
@@ -45,13 +46,16 @@ type
   // TBoardRowArray = array[TBoardRowRange] of TPiece;
   // TBoard = array[TBoardColRange] of TBoardRowArray;
   TBoard = array[TBoardColRange] of array[TBoardRowRange] of TPiece;
-
+  TBoardColName = array[TBoardColType] of char;
+  TBoardRowName = array[TBoardRowType] of char;
+  TCellNames = array[TBoardColRange] of array[TBoardRowRange] of string;
 
   { TBoardObj }
 
   TBoardObj = class
   public
     constructor Create;
+    destructor Destroy; override;
   public
     Name: string;
     Board: TBoard;
@@ -59,17 +63,24 @@ type
       WhiteCanCastelingOOO,
       BlackCanCastelingOO,
       BlackCanCastelingOOO: boolean;
+    ChildBoards: TStringToPointerTree;
   end;
 
 
   { TBoardObjHelper }
 
   TBoardObjHelper = class helper for TBoardObj
+  private
+    // procedure DoExpand_
+  public
     procedure Clear;
     procedure StartPos(const UsePieceColor: TPieceColor);
     function ToString(const UsePieceColor: TPieceColor = pcWhite;
                       const CellWidth: integer = 1;
                       const ALang: TLocalLangType = llEn): string;
+    procedure ExpandAll(const APieceColor: TPieceColor; const ALang: TLocalLangType = llEn);
+
+    function MoveName(const col: TBoardColType; const row: TBoardRowType; const ALang: TLocalLangType = llEn): string;
   end;
 
 const
@@ -120,6 +131,17 @@ const
 
                               );
 
+  BoardColName: TBoardColName = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
+  BoardRowName: TBoardRowName = ('1', '2', '3', '4', '5', '6', '7', '8');
+  CellNames: TCellNames = ( ('a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'),
+                            ('b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8'),
+                            ('c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'),
+                            ('d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'),
+                            ('e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'),
+                            ('f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8'),
+                            ('g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'),
+                            ('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
+                          );
 
 implementation
 
@@ -276,6 +298,65 @@ begin
 
 end;
 
+procedure TBoardObjHelper.ExpandAll(const APieceColor: TPieceColor;
+  const ALang: TLocalLangType);
+var col: TBoardColType;
+    row: TBoardRowType;
+    p:TPiece;
+    // StartBoard
+    SetOfPieces: set of TPieceType;
+begin
+  // allocate resources
+  if not Assigned(ChildBoards) then
+     ChildBoards:=TStringToPointerTree.Create(false);
+
+  // init
+  case APieceColor of
+    pcWhite: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
+    pcBlack: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
+  end;
+
+  // loop on cells
+  for row:=row8 downto row1 do begin
+    // write(' ', ord(row)+1, ' ');
+
+    for col:=colA to colH do begin
+      p:=Board[col, row];
+
+      if p.Piece in SetOfPieces then
+         WriteLn(Format('%s%s - %s - %s', [ BoardColName[col], BoardRowName[row],
+                                            CellNames[col, row],
+                                            BoardLocal[ALang, p.Piece ].Des1 ]));
+
+    end;
+
+  end; // for row
+
+end;
+
+function TBoardObjHelper.MoveName(const col: TBoardColType;
+  const row: TBoardRowType; const ALang: TLocalLangType): string;
+begin
+  // todo: capture indicator
+
+  result := '';
+  case Board[col, row].Piece of
+     cpEmpty: result := '?' + CellNames[col, row];
+     cpPawnBlack, cpPawnWhite: result := CellNames[col, row];
+     cpRookWhite,
+       cpRookBlack,
+       cpKnightWhite,
+       cpKnightBlack,
+       cpBishopWhite,
+       cpBishopBlack,
+       cpQueenWhite,
+       cpQueenBlack,
+       cpKingWhite,
+       cpKingBlack    : result := BoardLocal[ALang, Board[col, row].Piece ].Des1 + CellNames[col, row];
+  end;
+
+end;
+
 { TBoardObj }
 
 constructor TBoardObj.Create;
@@ -284,6 +365,16 @@ begin
   WhiteCanCastelingOOO:=False;
   BlackCanCastelingOO:=False;
   BlackCanCastelingOOO:=False;
+
+  ChildBoards:=nil;
+end;
+
+destructor TBoardObj.Destroy;
+begin
+  ChildBoards.Clear;
+  ChildBoards.Free;
+
+  inherited Destroy;
 end;
 
 end.

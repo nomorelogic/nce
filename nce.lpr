@@ -76,7 +76,7 @@ var ErrorMsg: String;
     s:string;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hopwlmc', 'help');
+  ErrorMsg:=CheckOptions('hopwlmcx', 'help');
   if ErrorMsg<>'' then begin
     ShowException(Exception.Create(ErrorMsg));
     Terminate;
@@ -139,6 +139,13 @@ begin
        else
           raise exception.CreateFmt('Unable to write board in mode %s!', [s]);
        end;
+    end;
+
+
+    if HasOption('x', 'expand') then begin
+       s:=UpperCase(GetOptionValue('x'));
+       if s = 'ALL' then
+          BoardObj.ExpandAll(OwnColor, Language);
     end;
 
 
