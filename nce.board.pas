@@ -9,6 +9,7 @@ uses
 
 type
   TPieceColor = (pcWhite, pcBlack);
+  TCastinlg = (castlWhiteKSide, castlWhiteQSide, castlBlackKSide, castlBlackQSide);
 
   TPieceType = (cpEmpty,
                 cpPawnWhite,   cpPawnBlack,    // pawn   / pedone
@@ -35,7 +36,7 @@ type
   TLocalization = array[TLocalLangRange] of TDescriptionArray;
 
   TPiece = record
-    Piece: TPieceType;
+    PieceType: TPieceType;
   end;
 
   TBoardColType  = (colA, colB, colC, colD, colE, colF, colG, colH);
@@ -43,12 +44,48 @@ type
   TBoardRowType  = (row1, row2, row3, row4, row5, row6, row7, row8);
   TBoardRowRange = row1..row8;
 
+  TCellCoord = record
+    col: TBoardColType;
+    row: TBoardRowType;
+  end;
+
+  TPieceMoves = record
+    MaxMove: integer;
+    Moves: array[0..29] of TCellCoord;
+  end;
+
+  // I need this?
+  TBoardCell = ( bcA1, bcA2, bcA3, bcA4, bcA5, bcA6, bcA7, bcA8,
+                 bcB1, bcB2, bcB3, bcB4, bcB5, bcB6, bcB7, bcB8,
+                 bcC1, bcC2, bcC3, bcC4, bcC5, bcC6, bcC7, bcC8,
+                 bcD1, bcD2, bcD3, bcD4, bcD5, bcD6, bcD7, bcD8,
+                 bcE1, bcE2, bcE3, bcE4, bcE5, bcE6, bcE7, bcE8,
+                 bcF1, bcF2, bcF3, bcF4, bcF5, bcF6, bcF7, bcF8,
+                 bcG1, bcG2, bcG3, bcG4, bcG5, bcG6, bcG7, bcG8,
+                 bcH1, bcH2, bcH3, bcH4, bcH5, bcH6, bcH7, bcH8  );
+
+
+  // TBoardCell_Set = set of TBoardCell;
+  TCellCoord_Set = set of char;
+
   // TBoardRowArray = array[TBoardRowRange] of TPiece;
   // TBoard = array[TBoardColRange] of TBoardRowArray;
   TBoard = array[TBoardColRange] of array[TBoardRowRange] of TPiece;
   TBoardColName = array[TBoardColType] of char;
   TBoardRowName = array[TBoardRowType] of char;
   TCellNames = array[TBoardColRange] of array[TBoardRowRange] of string;
+
+  TFenRows = array[TBoardRowRange] of string;
+  TFen = record
+    Rows: TFenRows;
+    ActiveColor: TPieceColor;
+    Castlings: set of TCastinlg;
+    CanEnPassant: boolean;
+    EnPassant: TCellCoord;
+    Halfmove: integer;
+    Fullmove: integer;
+  end;
+
 
   { TBoardObj }
 
@@ -74,13 +111,19 @@ type
     // procedure DoExpand_
   public
     procedure Clear;
+
     procedure StartPos(const UsePieceColor: TPieceColor);
+    procedure StartFen(const AFenString: string);
+
+
     function ToString(const UsePieceColor: TPieceColor = pcWhite;
                       const CellWidth: integer = 1;
                       const ALang: TLocalLangType = llEn): string;
-    procedure ExpandAll(const APieceColor: TPieceColor; const ALang: TLocalLangType = llEn);
+    procedure ExpandAll(const AMoveColor: TPieceColor; const ALang: TLocalLangType = llEn);
 
-    function MoveName(const col: TBoardColType; const row: TBoardRowType; const ALang: TLocalLangType = llEn): string;
+    procedure GetMoves(const ACell: TCellCoord; var AMoveArray: TPieceMoves);
+
+    function MoveName(const Acol: TBoardColType; const Arow: TBoardRowType; const ALang: TLocalLangType = llEn): string;
   end;
 
 const
@@ -143,7 +186,86 @@ const
                             ('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
                           );
 
+
+  function IsWhite(APiece: TPieceType): boolean;
+  function IsBlack(APiece: TPieceType): boolean;
+  function PieceColor(APiece: TPieceType): TPieceColor;
+
+  function DecodeAlgebraicNotation(const AValue: string; var ACell: TCellCoord): boolean;
+
+
 implementation
+
+uses StrUtils;
+
+function IsWhite(APiece: TPieceType): boolean;
+begin
+  result := APiece in [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
+end;
+
+function IsBlack(APiece: TPieceType): boolean;
+begin
+  result := APiece in [cpPawnBlack, cpRookBlack, cpKnightBlack, cpBishopBlack, cpQueenBlack,  cpKingBlack];
+end;
+
+function PieceColor(APiece: TPieceType): TPieceColor;
+begin
+  case APiece of
+     cpPawnWhite,
+       cpRookWhite, cpKnightWhite,
+       cpBishopWhite, cpQueenWhite,
+       cpKingWhite: result :=pcWhite;
+     cpPawnBlack,
+       cpRookBlack, cpKnightBlack,
+       cpBishopBlack, cpQueenBlack,
+       cpKingBlack: result :=pcBlack;
+  else
+    raise Exception.Create('Error in piece color detection!');
+
+  end;
+end;
+
+function DecodeAlgebraicNotation(const AValue: string; var ACell: TCellCoord
+  ): boolean;
+begin
+  result :=False;
+  try
+    case lowercase(AValue)[1] of
+       'a': ACell.col:=colA;
+       'b': ACell.col:=colA;
+       'c': ACell.col:=colA;
+       'd': ACell.col:=colA;
+       'e': ACell.col:=colA;
+       'f': ACell.col:=colA;
+       'g': ACell.col:=colA;
+       'h': ACell.col:=colA;
+    else
+      raise exception.CreateFmt('"%s" is not a valid algebraic notation!', [AValue]);
+    end;
+
+    case lowercase(AValue)[2] of
+       '1': ACell.row:=row1;
+       '2': ACell.row:=row2;
+       '3': ACell.row:=row3;
+       '4': ACell.row:=row4;
+       '5': ACell.row:=row5;
+       '6': ACell.row:=row6;
+       '7': ACell.row:=row7;
+       '8': ACell.row:=row8;
+    else
+      raise exception.CreateFmt('"%s" is not a valid algebraic notation!', [AValue]);
+    end;
+
+    result :=True;
+
+  except
+    raise;
+  end;
+
+
+end;
+
+
 
 { TBoardObjHelper }
 
@@ -153,7 +275,7 @@ var col: TBoardColType;
 begin
   for col:=colA to colH do
     for row:=row1 to row2 do
-      Board[col, row].Piece:=cpEmpty;
+      Board[col, row].PieceType:=cpEmpty;
 end;
 
 procedure TBoardObjHelper.StartPos(const UsePieceColor: TPieceColor);
@@ -179,40 +301,160 @@ begin
   end;
 
   // white pieces
-  Board[colA, rowWhite].Piece:=cpRookWhite;
-  Board[colB, rowWhite].Piece:=cpKnightWhite;
-  Board[colC, rowWhite].Piece:=cpBishopWhite;
-  Board[colD, rowWhite].Piece:=cpQueenWhite;
-  Board[colE, rowWhite].Piece:=cpKingWhite;
-  Board[colF, rowWhite].Piece:=cpBishopWhite;
-  Board[colG, rowWhite].Piece:=cpKnightWhite;
-  Board[colH, rowWhite].Piece:=cpRookWhite;
+  Board[colA, rowWhite].PieceType:=cpRookWhite;
+  Board[colB, rowWhite].PieceType:=cpKnightWhite;
+  Board[colC, rowWhite].PieceType:=cpBishopWhite;
+  Board[colD, rowWhite].PieceType:=cpQueenWhite;
+  Board[colE, rowWhite].PieceType:=cpKingWhite;
+  Board[colF, rowWhite].PieceType:=cpBishopWhite;
+  Board[colG, rowWhite].PieceType:=cpKnightWhite;
+  Board[colH, rowWhite].PieceType:=cpRookWhite;
 
   // white pawns
   for col:=colA to colH do
-      Board[col, rowWhitePawns].Piece:=cpPawnWhite;
+      Board[col, rowWhitePawns].PieceType:=cpPawnWhite;
 
   // clear middle
   for col:=colA to colH do
     for row:=row3 to row6 do
-      Board[col, row].Piece:=cpEmpty;
+      Board[col, row].PieceType:=cpEmpty;
 
   // black pieces
-  Board[colA, rowBlack].Piece:=cpRookBlack;
-  Board[colB, rowBlack].Piece:=cpKnightBlack;
-  Board[colC, rowBlack].Piece:=cpBishopBlack;
-  Board[colD, rowBlack].Piece:=cpQueenBlack;
-  Board[colE, rowBlack].Piece:=cpKingBlack;
-  Board[colF, rowBlack].Piece:=cpBishopBlack;
-  Board[colG, rowBlack].Piece:=cpKnightBlack;
-  Board[colH, rowBlack].Piece:=cpRookBlack;
+  Board[colA, rowBlack].PieceType:=cpRookBlack;
+  Board[colB, rowBlack].PieceType:=cpKnightBlack;
+  Board[colC, rowBlack].PieceType:=cpBishopBlack;
+  Board[colD, rowBlack].PieceType:=cpQueenBlack;
+  Board[colE, rowBlack].PieceType:=cpKingBlack;
+  Board[colF, rowBlack].PieceType:=cpBishopBlack;
+  Board[colG, rowBlack].PieceType:=cpKnightBlack;
+  Board[colH, rowBlack].PieceType:=cpRookBlack;
 
   // black pawns
   for col:=colA to colH do
-      Board[col, rowBlackPawns].Piece:=cpPawnBlack;
+      Board[col, rowBlackPawns].PieceType:=cpPawnBlack;
 
   // castling
   // ABoard.wh;
+
+end;
+
+{$DEFINE DEBUG_FEN}
+procedure TBoardObjHelper.StartFen(const AFenString: string);
+var fen: TFen;
+    s: string;
+    row: TBoardRowType;
+begin
+  // Here's the FEN for the starting position:
+  // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+  // And after the move 1.e4:
+  // rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+  // And then after 1...c5:
+  // rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2
+  // And then after 2.Nf3:
+  // rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2
+
+  // todo: localization
+
+  {$IFDEF DEBUG_FEN}
+  Writeln('fen: ', AFenString);
+  {$ENDIF}
+
+  // read fen record
+  s:=ExtractWord(1, AFenString, [' ']);
+  {$IFDEF DEBUG_FEN}
+  WriteLn('field 1: ' , s);
+  {$ENDIF}
+
+  // - - - - - - - - - - - - - - - - -
+  // field 1: rows
+  // - - - - - - - - - - - - - - - - -
+  for row:=row1 to row8 do
+    fen.Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
+
+  // debug fen rows
+  {$IFDEF DEBUG_FEN}
+  for row:=row8 downto row1 do begin
+    fen.Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
+    WriteLn('  [' ,row, ']: ' , fen.Rows[row]);
+  end;
+  {$ENDIF}
+
+  // - - - - - - - - - - - - - - - - -
+  // field 2: active color
+  // - - - - - - - - - - - - - - - - -
+  s:=lowercase(ExtractWord(2, AFenString, [' '])) + ' ';
+  case s[1] of
+     'w': fen.ActiveColor:=pcWhite;
+     'b': fen.ActiveColor:=pcBlack;
+  else
+     raise exception.CreateFmt('FEN string error in field 2: "%s" is not a valid active color!', [ trim(s) ]);
+  end;
+
+  // - - - - - - - - - - - - - - - - -
+  // field 3: castling
+  // - - - - - - - - - - - - - - - - -
+  s:=ExtractWord(3, AFenString, [' ']);
+  fen.Castlings:=[];
+  if pos('K', s)>0 then
+     fen.Castlings+=[castlWhiteKSide];
+  if pos('Q', s)>0 then
+     fen.Castlings+=[castlWhiteQSide];
+  if pos('k', s)>0 then
+     fen.Castlings+=[castlBlackKSide];
+  if pos('q', s)>0 then
+     fen.Castlings+=[castlBlackQSide];
+
+  {$IFDEF DEBUG_FEN}
+  Write('Castling: ');
+  if castlWhiteKSide in fen.Castlings then Write(castlWhiteKSide, '; ');
+  if castlWhiteQSide in fen.Castlings then Write(castlWhiteQSide, '; ');
+  if castlBlackKSide in fen.Castlings then Write(castlBlackKSide, '; ');
+  if castlBlackQSide in fen.Castlings then Write(castlBlackQSide, '; ');
+  Writeln;
+  {$ENDIF}
+
+  // - - - - - - - - - - - - - - - - -
+  // field 4: en passant
+  // - - - - - - - - - - - - - - - - -
+  fen.CanEnPassant:=False;
+  s:=ExtractWord(4, AFenString, [' ']);
+  if length(s)=2 then
+     fen.CanEnPassant:=DecodeAlgebraicNotation(s, fen.EnPassant);
+
+  {$IFDEF DEBUG_FEN}
+  Write('En passant: ', s, ' Can = ', fen.CanEnPassant, ' ');
+  if fen.CanEnPassant then
+     WriteLn('[', fen.EnPassant.col, ',', fen.EnPassant.row, ']')
+  else
+     Writeln;
+  {$ENDIF}
+
+
+  // - - - - - - - - - - - - - - - - -
+  // field 5: halfmove
+  // - - - - - - - - - - - - - - - - -
+  s:=ExtractWord(5, AFenString, [' ']);
+  try
+    fen.Halfmove:=StrToInt(s);
+    {$IFDEF DEBUG_FEN}
+    Write('Halfmove = ', fen.Halfmove, ' ');
+    {$ENDIF}
+  except
+    raise exception.CreateFmt('"%s" is not a valid halfmove!', [s]);
+  end;
+
+  // - - - - - - - - - - - - - - - - -
+  // field 6: fullmove
+  // - - - - - - - - - - - - - - - - -
+  s:=ExtractWord(6, AFenString, [' ']);
+  try
+    fen.Fullmove:=StrToInt(s);
+    {$IFDEF DEBUG_FEN}
+    Writeln('Fullmove = ', fen.Fullmove, ' ');
+    {$ENDIF}
+  except
+    raise exception.CreateFmt('"%s" is not a valid fullmove!', [s]);
+  end;
 
 end;
 
@@ -262,7 +504,7 @@ begin
 
     for col:=colA to colH do begin
       p:=Board[col, row];
-      case p.Piece of
+      case p.PieceType of
         cpEmpty: // Write('.');
                  case CellWidth of
                    1: sOut+='.';
@@ -271,9 +513,9 @@ begin
                  end;
       else
         case CellWidth of
-          1: sOut += BoardLocal[ALang, p.Piece ].Des1;
-          3: sOut += ' ' + BoardLocal[ALang, p.Piece ].Des1 + ' |';
-          4: sOut += ' ' + BoardLocal[ALang, p.Piece ].Des2 + ' |';
+          1: sOut += BoardLocal[ALang, p.PieceType ].Des1;
+          3: sOut += ' ' + BoardLocal[ALang, p.PieceType ].Des1 + ' |';
+          4: sOut += ' ' + BoardLocal[ALang, p.PieceType ].Des2 + ' |';
         end;
 
       end;
@@ -298,7 +540,7 @@ begin
 
 end;
 
-procedure TBoardObjHelper.ExpandAll(const APieceColor: TPieceColor;
+procedure TBoardObjHelper.ExpandAll(const AMoveColor: TPieceColor;
   const ALang: TLocalLangType);
 var col: TBoardColType;
     row: TBoardRowType;
@@ -311,10 +553,12 @@ begin
      ChildBoards:=TStringToPointerTree.Create(false);
 
   // init
-  case APieceColor of
+  case AMoveColor of
     pcWhite: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
     pcBlack: SetOfPieces := [cpPawnBlack, cpRookBlack, cpKnightBlack, cpBishopBlack, cpQueenBlack,  cpKingBlack];
   end;
+
+  Writeln('Move: ', AMoveColor);
 
   // loop on cells
   for row:=row8 downto row1 do begin
@@ -323,10 +567,11 @@ begin
     for col:=colA to colH do begin
       p:=Board[col, row];
 
-      if p.Piece in SetOfPieces then
-         WriteLn(Format('%s%s - %s - %s', [ BoardColName[col], BoardRowName[row],
+      if p.PieceType in SetOfPieces then
+         WriteLn(Format('[%s%s] %s - %s / %s', [ BoardColName[col], BoardRowName[row],
                                             CellNames[col, row],
-                                            BoardLocal[ALang, p.Piece ].Des1 ]));
+                                            BoardLocal[ALang, p.PieceType ].Des1,
+                                            BoardLocal[ALang, p.PieceType ].Full]));
 
     end;
 
@@ -334,15 +579,246 @@ begin
 
 end;
 
-function TBoardObjHelper.MoveName(const col: TBoardColType;
-  const row: TBoardRowType; const ALang: TLocalLangType): string;
+procedure TBoardObjHelper.GetMoves(const ACell: TCellCoord;
+  var AMoveArray: TPieceMoves);
+
+var Piece: TPiece;
+
+  procedure _AddMove(const ANewCell: TCellCoord);
+  begin
+    inc(AMoveArray.MaxMove);
+    AMoveArray.Moves[AMoveArray.MaxMove] := ANewCell;
+  end; // _AddMove
+
+  procedure _GetPawnMoves;
+
+      procedure _GetPawnMoves_Forward1_Capture;
+      var NewCell: TCellCoord;
+          CanTest, CanMove, Captured: boolean;
+          SaveCol: TBoardColType;
+          CapturedType: TPieceType;
+      begin
+        // - - - - - - - - - - - - - - - - - - - -
+        // move forward by 1
+        // - - - - - - - - - - - - - - - - - - - -
+        CanMove:=False;
+        CanTest:=False;
+        NewCell:=ACell;
+
+        // pawn white
+        if Piece.PieceType = cpPawnWhite then begin
+           if (ACell.row < row8) then begin
+              CanTest:=True;
+              inc(NewCell.row);
+           end else begin
+              exit;
+           end;
+        end; // pawn white
+
+        // pawn black
+        if Piece.PieceType = cpPawnBlack then begin
+           if (ACell.row > row1) then begin
+              CanTest:=True;
+              dec(NewCell.row);
+           end else begin
+              exit;
+           end;
+        end; // pawn black
+
+        // test
+        if CanTest then begin
+           CanMove := Board[NewCell.col, NewCell.row].PieceType = cpEmpty;
+           if CanMove then
+              _AddMove(NewCell);
+        end; // CanTest
+
+
+        // - - - - - - - - - - - - - - - - - - - -
+        // capture sx
+        // - - - - - - - - - - - - - - - - - - - -
+
+        SaveCol := NewCell.col;
+
+        if ACell.col > colA then begin
+           Captured:=False;
+           dec(NewCell.col);
+           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
+           Captured:=CapturedType <> cpEmpty;
+           if Captured then begin
+              // pawn white
+              if Piece.PieceType = cpPawnWhite then
+                 Captured:=IsBlack(CapturedType);
+              // pawn black
+              if Piece.PieceType = cpPawnWhite then
+                 Captured:=IsWhite(CapturedType);
+              // add
+              if Captured then
+                 _AddMove(NewCell);
+           end;
+
+        end; // capture sx
+
+        // - - - - - - - - - - - - - - - - - - - -
+        // capture dx
+        // - - - - - - - - - - - - - - - - - - - -
+        NewCell.col := SaveCol;
+
+        if ACell.col < colH then begin
+           Captured:=False;
+           inc(NewCell.col);
+           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
+           Captured:=CapturedType <> cpEmpty;
+           if Captured then begin
+              // pawn white
+              if Piece.PieceType = cpPawnWhite then
+                 Captured:=IsBlack(CapturedType);
+              // pawn black
+              if Piece.PieceType = cpPawnWhite then
+                 Captured:=IsWhite(CapturedType);
+              // add
+              if Captured then
+                 _AddMove(NewCell);
+           end;
+
+        end; // capture dx
+
+      end; // _GetPawnMoves_Forward1
+
+      procedure _GetPawnMoves_Forward2;
+      var NewCell: TCellCoord;
+          CanTest, CanMove: boolean;
+      begin
+        // - - - - - - - - - - - - - - - - - - - -
+        // move forward by 2
+        // - - - - - - - - - - - - - - - - - - - -
+        CanMove:=False;
+        CanTest:=False;
+        NewCell:=ACell;
+
+        // pawn white
+        if Piece.PieceType = cpPawnWhite then begin
+           if (ACell.row = row2) then begin
+              CanTest:=True;
+              NewCell.row:=TBoardRowType(4);
+           end;
+        end; // pawn white
+
+        // pawn black
+        if Piece.PieceType = cpPawnBlack then begin
+           if (ACell.row = row7) then begin
+              CanTest:=True;
+              NewCell.row:=TBoardRowType(5);
+           end;
+        end; // pawn black
+
+        // test
+        if CanTest then begin
+           CanMove := Board[NewCell.col, NewCell.row].PieceType = cpEmpty;
+           if CanMove then
+              _AddMove(NewCell);
+        end; // CanTest
+
+      end; // _GetPawnMoves_Forward2
+
+      {
+      procedure _GetPawnMoves_CaptureSx;
+      var NewCell: TCellCoord;
+          CanTest, CanMove: boolean;
+          Captured: TPieceType;
+      begin
+        // - - - - - - - - - - - - - - - - - - - -
+        // capture sx
+        // - - - - - - - - - - - - - - - - - - - -
+        CanMove:=False;
+        CanTest:=False;
+        NewCell:=ACell;
+
+        // pawn white
+        if Piece.PieceType = cpPawnWhite then begin
+           if (ACell.row < row8) and (ACell.col > colA) then begin
+              inc(NewCell.row);
+              dec(NewCell.col);
+              Captured := Board[NewCell.col, NewCell.row].PieceType;
+              if Captured <> cpEmpty then
+                 CanMove:=IsBlack(Captured);
+           end;
+        end; // pawn white
+
+        // pawn black
+        if Piece.PieceType = cpPawnWhite then begin
+           if (ACell.row > row1) and (ACell.col > colA) then begin
+              dec(NewCell.row);
+              dec(NewCell.col);
+              Captured := Board[NewCell.col, NewCell.row].PieceType;
+              if Captured <> cpEmpty then
+                 CanMove:=IsWhite(Captured);
+           end;
+        end; // pawn white
+
+        // test
+        if CanMove then
+           _AddMove(NewCell);
+
+      end; // _GetPawnMoves_CaptureSx
+      }
+
+  begin // _GetPawnMoves
+
+    Piece:=Board[ACell.col, ACell.row];
+    _GetPawnMoves_Forward1_Capture;
+    _GetPawnMoves_Forward2;
+    // _GetPawnMoves_CaptureSx;
+
+  end; // _GetPawnMoves
+
+  procedure _GetRookMoves;
+  begin
+
+  end;
+
+  procedure _GetKnightMoves;
+  begin
+
+  end;
+
+  procedure _GetBishopMoves;
+  begin
+
+  end;
+
+  procedure _GetQueenMoves;
+  begin
+
+  end;
+
+  procedure _GetKingMoves;
+  begin
+
+  end;
+
+begin
+  // get possible moves for a Piece in a Cell
+  AMoveArray.MaxMove:=-1;
+  case Board[ACell.col, ACell.row].PieceType of
+     cpPawnWhite,   cpPawnBlack  : _GetPawnMoves;
+     cpRookWhite,   cpRookBlack  : _GetRookMoves;
+     cpKnightWhite, cpKnightBlack: _GetKnightMoves;
+     cpBishopWhite, cpBishopBlack: _GetBishopMoves;
+     cpQueenWhite,  cpQueenBlack : _GetQueenMoves;
+     cpKingWhite,   cpKingBlack  : _GetKingMoves;
+  end;
+
+end;
+
+function TBoardObjHelper.MoveName(const Acol: TBoardColType;
+  const Arow: TBoardRowType; const ALang: TLocalLangType): string;
 begin
   // todo: capture indicator
 
   result := '';
-  case Board[col, row].Piece of
-     cpEmpty: result := '?' + CellNames[col, row];
-     cpPawnBlack, cpPawnWhite: result := CellNames[col, row];
+  case Board[Acol, Arow].PieceType of
+     cpEmpty: result := '?' + CellNames[Acol, Arow];
+     cpPawnBlack, cpPawnWhite: result := CellNames[Acol, Arow];
      cpRookWhite,
        cpRookBlack,
        cpKnightWhite,
@@ -352,7 +828,7 @@ begin
        cpQueenWhite,
        cpQueenBlack,
        cpKingWhite,
-       cpKingBlack    : result := BoardLocal[ALang, Board[col, row].Piece ].Des1 + CellNames[col, row];
+       cpKingBlack    : result := BoardLocal[ALang, Board[Acol, Arow].PieceType ].Des1 + CellNames[Acol, Arow];
   end;
 
 end;
@@ -371,8 +847,10 @@ end;
 
 destructor TBoardObj.Destroy;
 begin
-  ChildBoards.Clear;
-  ChildBoards.Free;
+  if Assigned(ChildBoards) then begin
+     ChildBoards.Clear;
+     ChildBoards.Free;
+  end;
 
   inherited Destroy;
 end;

@@ -25,6 +25,7 @@ type
 
     // procedure ResetBoard(const UsePieceColor: TPieceColor; var ABoard: TBoard);
     procedure StartPosition(const ABoardObj: TBoardObj; const UsePieceColor: TPieceColor);
+    procedure FenPosition(const ABoardObj: TBoardObj; const AFenString: string);
     procedure DoStringToBoard(const AValue: string; var ABoard: TBoard);
 
   protected
@@ -62,21 +63,29 @@ begin
   ABoardObj.StartPos(UsePieceColor);
 end;
 
+procedure TNomorelogicChessEngine.FenPosition(const ABoardObj: TBoardObj;
+  const AFenString: string);
+begin
+  ABoardObj.StartFen(AFenString);
+end;
+
 
 procedure TNomorelogicChessEngine.DoStringToBoard(const AValue: string;
   var ABoard: TBoard);
 begin
   // ClearBoard(ABoard);
-  // ABoard[colC, row3].Piece:=cpKingWhite;
+  // ABoard[colC, row3].PieceType:=cpKingWhite;
 end;
 
 
 procedure TNomorelogicChessEngine.DoRun;
 var ErrorMsg: String;
     s:string;
+    l: boolean;
+    i: integer;
 begin
   // quick check parameters
-  ErrorMsg:=CheckOptions('hopwlmcx', 'help');
+  ErrorMsg:=CheckOptions('hopwlmcxf', ['help', 'write', 'fen']);
   if ErrorMsg<>'' then begin
     ShowException(Exception.Create(ErrorMsg));
     Terminate;
@@ -126,19 +135,38 @@ begin
        if s = 'STARTPOS' then
           // ResetBoard(OwnColor, FBoard);
           StartPosition(BoardObj, OwnColor);
+    end;
 
+    if HasOption('f', 'fen') then begin
+       if not Assigned(FBoardObj) then
+          FBoardObj:=TBoardObj.Create;
+
+       l:=False;
+       i:=FindOptionIndex('f', l);
+       if i<0 then
+          i:=FindOptionIndex('fen', l);
+       if i>0 then begin
+          s:=Params[ i + 1 ];
+          if s = '3' then s:='rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2';
+          FenPosition(BoardObj, s);
+       end;
     end;
 
     if HasOption('w', 'write') then begin
        s:=UpperCase(GetOptionValue('w'));
-       case s of
-          '1': WriteLn(BoardObj.ToString(OwnColor, 1, Language));
-          '3': WriteLn(BoardObj.ToString(OwnColor, 3, Language));
-          '4': WriteLn(BoardObj.ToString(OwnColor, 4, Language));
-          // 'F', 'FULL': WriteBoardDes4(FLanguage, Board);
-       else
-          raise exception.CreateFmt('Unable to write board in mode %s!', [s]);
+       if s = '' then begin
+          l:=True;
+          s:=Params[ FindOptionIndex('write', l) + 1 ];
        end;
+       if s <> '' then
+          case s of
+             '1': WriteLn(BoardObj.ToString(OwnColor, 1, Language));
+             '3': WriteLn(BoardObj.ToString(OwnColor, 3, Language));
+             '4': WriteLn(BoardObj.ToString(OwnColor, 4, Language));
+             // 'F', 'FULL': WriteBoardDes4(FLanguage, Board);
+          else
+             raise exception.CreateFmt('Unable to write board in mode %s!', [s]);
+          end;
     end;
 
 
@@ -188,7 +216,8 @@ begin
   writeln('-w', #9, 'write board to console {1|2}');
 
   writeln('Examples:');
-  writeln('./nce -l:en -o:w -p:startpos -w:1');
+  writeln('./nce -l en -o w -p startpos -w 1');
+  writeln('./nce -l en --write 3 -f 3');
 
 end;
 
