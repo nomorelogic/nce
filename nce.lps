@@ -7,9 +7,9 @@
       <Unit0>
         <Filename Value="nce.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="129"/>
-        <CursorPos Y="140"/>
-        <UsageCount Value="52"/>
+        <TopLine Value="143"/>
+        <CursorPos X="19" Y="143"/>
+        <UsageCount Value="53"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -17,13 +17,13 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="438"/>
-        <CursorPos X="40" Y="453"/>
-        <FoldState Value=" T3wf6Y TLxY6ei"/>
-        <UsageCount Value="52"/>
+        <TopLine Value="359"/>
+        <CursorPos X="51" Y="387"/>
+        <FoldState Value=" T3x66Y TLxg6eO"/>
+        <UsageCount Value="53"/>
         <Bookmarks Count="2">
-          <Item0 X="32" Y="82" ID="1"/>
-          <Item1 X="4" Y="352"/>
+          <Item0 Y="77" ID="1"/>
+          <Item1 X="4" Y="355"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -60,123 +60,123 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="297" Column="15" TopLine="290"/>
+        <Caret Line="448" Column="28" TopLine="418"/>
       </Position1>
       <Position2>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="196" Column="15" TopLine="177"/>
+        <Caret Line="835" TopLine="815"/>
       </Position2>
       <Position3>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="318" TopLine="300"/>
+        <Caret Line="104" Column="17" TopLine="81"/>
       </Position3>
       <Position4>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="310" Column="73" TopLine="298"/>
+        <Caret Line="267" Column="3" TopLine="263"/>
       </Position4>
       <Position5>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="44" Column="25" TopLine="30"/>
+        <Caret Line="104" Column="10" TopLine="82"/>
       </Position5>
       <Position6>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="319" Column="41" TopLine="294"/>
+        <Caret Line="278" Column="21" TopLine="248"/>
       </Position6>
       <Position7>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="209" Column="16" TopLine="203"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="102" Column="15" TopLine="86"/>
       </Position7>
       <Position8>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="12" Column="16"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="267" Column="20" TopLine="258"/>
       </Position8>
       <Position9>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="28" Column="65" TopLine="4"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="107" Column="15" TopLine="86"/>
       </Position9>
       <Position10>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="66" Column="38" TopLine="42"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="418" Column="7" TopLine="416"/>
       </Position10>
       <Position11>
         <Filename Value="nce.lpr"/>
-        <Caret Line="67" Column="13" TopLine="43"/>
+        <Caret Line="136" Column="13" TopLine="129"/>
       </Position11>
       <Position12>
         <Filename Value="nce.lpr"/>
-        <Caret Line="69" Column="26" TopLine="45"/>
+        <Caret Line="20" Column="45"/>
       </Position12>
       <Position13>
         <Filename Value="nce.lpr"/>
-        <Caret Line="88" Column="61" TopLine="64"/>
+        <Caret Line="143" TopLine="126"/>
       </Position13>
       <Position14>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="353" Column="36" TopLine="333"/>
+        <Caret Line="277" Column="4" TopLine="257"/>
       </Position14>
       <Position15>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="362" Column="5" TopLine="339"/>
+        <Caret Line="82" Column="15" TopLine="71"/>
       </Position15>
       <Position16>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="363" Column="36" TopLine="347"/>
+        <Caret Line="844" Column="3" TopLine="825"/>
       </Position16>
       <Position17>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="351" Column="3" TopLine="346"/>
+        <Caret Line="104" Column="17" TopLine="86"/>
       </Position17>
       <Position18>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="140" TopLine="129"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="355" Column="29" TopLine="331"/>
       </Position18>
       <Position19>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="351" TopLine="346"/>
+        <Caret Line="106" Column="15" TopLine="89"/>
       </Position19>
       <Position20>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="373" Column="63" TopLine="359"/>
+        <Caret Line="284" Column="39" TopLine="261"/>
       </Position20>
       <Position21>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="179" Column="24" TopLine="163"/>
+        <Caret Line="107" Column="15" TopLine="88"/>
       </Position21>
       <Position22>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="495" Column="54" TopLine="493"/>
+        <Caret Line="390" Column="49" TopLine="367"/>
       </Position22>
       <Position23>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="82" Column="32" TopLine="67"/>
+        <Caret Line="368" Column="3" TopLine="368"/>
       </Position23>
       <Position24>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="378" Column="6" TopLine="357"/>
+        <Caret Line="106" Column="15" TopLine="89"/>
       </Position24>
       <Position25>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="90" Column="49" TopLine="77"/>
+        <Caret Line="304" Column="48" TopLine="282"/>
       </Position25>
       <Position26>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="194" Column="3" TopLine="183"/>
+        <Caret Line="107" Column="15" TopLine="88"/>
       </Position26>
       <Position27>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="232" Column="12" TopLine="228"/>
+        <Caret Line="387" Column="6" TopLine="368"/>
       </Position27>
       <Position28>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="234" Column="13" TopLine="228"/>
+        <Caret Line="185" Column="5" TopLine="259"/>
       </Position28>
       <Position29>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="232" Column="24" TopLine="216"/>
+        <Caret Line="304" Column="48" TopLine="276"/>
       </Position29>
       <Position30>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="425" Column="49" TopLine="406"/>
+        <Caret Line="305" Column="48" TopLine="276"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -184,7 +184,7 @@
       <Modes Count="1" ActiveMode="default">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="-l en -o w -p startpos -w 1 --fen &quot;3&quot;"/>
+            <CommandLineParams Value="nce -l en --fen &quot;3&quot;"/>
           </local>
         </Mode0>
       </Modes>
@@ -197,14 +197,14 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="nce.lpr"/>
-        <Line Value="184"/>
+        <Line Value="187"/>
       </Item1>
       <Item2>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="nce.lpr"/>
-        <Line Value="140"/>
+        <Line Value="143"/>
       </Item2>
     </BreakPoints>
   </Debugging>

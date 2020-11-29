@@ -10,6 +10,9 @@ uses
   Classes, SysUtils, CustApp, nce.board
   { you can add units after this };
 
+
+  // -l en -o w -p startpos -w 1 --fen "3"
+
 type
 
   { TNomorelogicChessEngine }
@@ -66,7 +69,7 @@ end;
 procedure TNomorelogicChessEngine.FenPosition(const ABoardObj: TBoardObj;
   const AFenString: string);
 begin
-  ABoardObj.StartFen(AFenString);
+  ABoardObj.LoadBoardFromFenString(AFenString);
 end;
 
 

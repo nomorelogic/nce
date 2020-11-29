@@ -75,18 +75,6 @@ type
   TBoardRowName = array[TBoardRowType] of char;
   TCellNames = array[TBoardColRange] of array[TBoardRowRange] of string;
 
-  TFenRows = array[TBoardRowRange] of string;
-  TFen = record
-    Rows: TFenRows;
-    ActiveColor: TPieceColor;
-    Castlings: set of TCastinlg;
-    CanEnPassant: boolean;
-    EnPassant: TCellCoord;
-    Halfmove: integer;
-    Fullmove: integer;
-  end;
-
-
   { TBoardObj }
 
   TBoardObj = class
@@ -96,10 +84,13 @@ type
   public
     Name: string;
     Board: TBoard;
-    WhiteCanCastelingOO,
-      WhiteCanCastelingOOO,
-      BlackCanCastelingOO,
-      BlackCanCastelingOOO: boolean;
+    ActiveColor: TPieceColor;
+    Castlings: set of TCastinlg;
+    Halfmove: integer;
+    Fullmove: integer;
+    CanEnPassant: boolean;
+    EnPassant: TCellCoord;
+
     ChildBoards: TStringToPointerTree;
   end;
 
@@ -113,8 +104,7 @@ type
     procedure Clear;
 
     procedure StartPos(const UsePieceColor: TPieceColor);
-    procedure StartFen(const AFenString: string);
-
+    procedure LoadBoardFromFenString(const AFenString: string);
 
     function ToString(const UsePieceColor: TPieceColor = pcWhite;
                       const CellWidth: integer = 1;
@@ -276,6 +266,17 @@ begin
   for col:=colA to colH do
     for row:=row1 to row2 do
       Board[col, row].PieceType:=cpEmpty;
+
+  ActiveColor:=pcWhite;
+  Castlings:=[];
+  Halfmove:=0;
+  Fullmove:=0;
+  CanEnPassant:=False;
+
+  if Assigned(ChildBoards) then
+     ChildBoards.Clear;
+  FreeAndNil(ChildBoards);
+
 end;
 
 procedure TBoardObjHelper.StartPos(const UsePieceColor: TPieceColor);
@@ -339,10 +340,12 @@ begin
 end;
 
 {$DEFINE DEBUG_FEN}
-procedure TBoardObjHelper.StartFen(const AFenString: string);
-var fen: TFen;
-    s: string;
+procedure TBoardObjHelper.LoadBoardFromFenString(const AFenString: string);
+type
+    TFenRows = array[TBoardRowRange] of string;
+var s: string;
     row: TBoardRowType;
+    Rows: TFenRows;
 begin
   // Here's the FEN for the starting position:
   // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
@@ -354,6 +357,8 @@ begin
   // rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2
 
   // todo: localization
+
+  Clear;
 
   {$IFDEF DEBUG_FEN}
   Writeln('fen: ', AFenString);
@@ -369,23 +374,26 @@ begin
   // field 1: rows
   // - - - - - - - - - - - - - - - - -
   for row:=row1 to row8 do
-    fen.Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
+    Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
 
   // debug fen rows
   {$IFDEF DEBUG_FEN}
   for row:=row8 downto row1 do begin
-    fen.Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
-    WriteLn('  [' ,row, ']: ' , fen.Rows[row]);
+    Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
+    WriteLn('  [' ,row, ']: ' , Rows[row]);
   end;
   {$ENDIF}
+
+  // Board[colA, rowWhite].PieceType:=cpRookWhite;
+
 
   // - - - - - - - - - - - - - - - - -
   // field 2: active color
   // - - - - - - - - - - - - - - - - -
   s:=lowercase(ExtractWord(2, AFenString, [' '])) + ' ';
   case s[1] of
-     'w': fen.ActiveColor:=pcWhite;
-     'b': fen.ActiveColor:=pcBlack;
+     'w': ActiveColor:=pcWhite;
+     'b': ActiveColor:=pcBlack;
   else
      raise exception.CreateFmt('FEN string error in field 2: "%s" is not a valid active color!', [ trim(s) ]);
   end;
@@ -394,37 +402,37 @@ begin
   // field 3: castling
   // - - - - - - - - - - - - - - - - -
   s:=ExtractWord(3, AFenString, [' ']);
-  fen.Castlings:=[];
+  Castlings:=[];
   if pos('K', s)>0 then
-     fen.Castlings+=[castlWhiteKSide];
+     Castlings+=[castlWhiteKSide];
   if pos('Q', s)>0 then
-     fen.Castlings+=[castlWhiteQSide];
+     Castlings+=[castlWhiteQSide];
   if pos('k', s)>0 then
-     fen.Castlings+=[castlBlackKSide];
+     Castlings+=[castlBlackKSide];
   if pos('q', s)>0 then
-     fen.Castlings+=[castlBlackQSide];
+     Castlings+=[castlBlackQSide];
 
   {$IFDEF DEBUG_FEN}
   Write('Castling: ');
-  if castlWhiteKSide in fen.Castlings then Write(castlWhiteKSide, '; ');
-  if castlWhiteQSide in fen.Castlings then Write(castlWhiteQSide, '; ');
-  if castlBlackKSide in fen.Castlings then Write(castlBlackKSide, '; ');
-  if castlBlackQSide in fen.Castlings then Write(castlBlackQSide, '; ');
+  if castlWhiteKSide in Castlings then Write(castlWhiteKSide, '; ');
+  if castlWhiteQSide in Castlings then Write(castlWhiteQSide, '; ');
+  if castlBlackKSide in Castlings then Write(castlBlackKSide, '; ');
+  if castlBlackQSide in Castlings then Write(castlBlackQSide, '; ');
   Writeln;
   {$ENDIF}
 
   // - - - - - - - - - - - - - - - - -
   // field 4: en passant
   // - - - - - - - - - - - - - - - - -
-  fen.CanEnPassant:=False;
+  CanEnPassant:=False;
   s:=ExtractWord(4, AFenString, [' ']);
   if length(s)=2 then
-     fen.CanEnPassant:=DecodeAlgebraicNotation(s, fen.EnPassant);
+     CanEnPassant:=DecodeAlgebraicNotation(s, EnPassant);
 
   {$IFDEF DEBUG_FEN}
-  Write('En passant: ', s, ' Can = ', fen.CanEnPassant, ' ');
-  if fen.CanEnPassant then
-     WriteLn('[', fen.EnPassant.col, ',', fen.EnPassant.row, ']')
+  Write('En passant: ', s, ' Can = ', CanEnPassant, ' ');
+  if CanEnPassant then
+     WriteLn('[', EnPassant.col, ',', EnPassant.row, ']')
   else
      Writeln;
   {$ENDIF}
@@ -435,9 +443,9 @@ begin
   // - - - - - - - - - - - - - - - - -
   s:=ExtractWord(5, AFenString, [' ']);
   try
-    fen.Halfmove:=StrToInt(s);
+    Halfmove:=StrToInt(s);
     {$IFDEF DEBUG_FEN}
-    Write('Halfmove = ', fen.Halfmove, ' ');
+    Write('Halfmove = ', Halfmove, ' ');
     {$ENDIF}
   except
     raise exception.CreateFmt('"%s" is not a valid halfmove!', [s]);
@@ -448,9 +456,9 @@ begin
   // - - - - - - - - - - - - - - - - -
   s:=ExtractWord(6, AFenString, [' ']);
   try
-    fen.Fullmove:=StrToInt(s);
+    Fullmove:=StrToInt(s);
     {$IFDEF DEBUG_FEN}
-    Writeln('Fullmove = ', fen.Fullmove, ' ');
+    Writeln('Fullmove = ', Fullmove, ' ');
     {$ENDIF}
   except
     raise exception.CreateFmt('"%s" is not a valid fullmove!', [s]);
@@ -837,10 +845,7 @@ end;
 
 constructor TBoardObj.Create;
 begin
-  WhiteCanCastelingOO:=False;
-  WhiteCanCastelingOOO:=False;
-  BlackCanCastelingOO:=False;
-  BlackCanCastelingOOO:=False;
+  Castlings:=[];
 
   ChildBoards:=nil;
 end;
