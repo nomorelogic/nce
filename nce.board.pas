@@ -28,12 +28,13 @@ type
   end;
 
   TDescriptionArray= array[TPieceRange] of TPieceDescription;
-
+  TColorArray= array[pcWhite..pcBlack] of TPieceDescription;
 
   TLocalLangType  = (llIt, llEn, llFr);
   TLocalLangRange = llIt..llFr;
 
   TLocalization = array[TLocalLangRange] of TDescriptionArray;
+  TColorLocalization = array[TLocalLangRange] of TColorArray;
 
   TPiece = record
     PieceType: TPieceType;
@@ -104,7 +105,8 @@ type
     procedure Clear;
 
     procedure StartPos(const UsePieceColor: TPieceColor);
-    procedure LoadBoardFromFenString(const AFenString: string);
+    procedure LoadBoardFromFenString(const AFenString: string;
+                                     const ALang: TLocalLangType=llEn);
 
     function ToString(const UsePieceColor: TPieceColor = pcWhite;
                       const CellWidth: integer = 1;
@@ -119,6 +121,21 @@ type
 const
   // https://en.wikipedia.org/wiki/Algebraic_notation_(chess)
   // https://it.wikipedia.org/wiki/Notazione_algebrica
+
+  ColorLocal: TColorLocalization = ( // it
+                                     ( (Des1: 'B'; Des2: 'Bi'; Full: 'Bianco'),
+                                       (Des1: 'N'; Des2: 'Ne'; Full: 'Nero')
+                                     ),
+                                     // en
+                                     ( (Des1: 'W'; Des2: 'Wh'; Full: 'White'),
+                                       (Des1: 'B'; Des2: 'Bl'; Full: 'Black')
+                                     ),
+                                     // fr
+                                     ( (Des1: 'B'; Des2: 'Bl'; Full: 'Blank'),
+                                       (Des1: 'N'; Des2: 'No'; Full: 'Noir')
+                                     )
+                                   );
+
   BoardLocal: TLocalization = (   // it
                                   ( (Des1: 'P'; Des2: 'PB'; Full: 'Pedone Bianco'),
                                     (Des1: 'p'; Des2: 'pn'; Full: 'Pedone Nero'),
@@ -144,8 +161,8 @@ const
                                     (Des1: 'b'; Des2: 'bb'; Full: 'Black Bishop'),
                                     (Des1: 'Q'; Des2: 'QW'; Full: 'White Queen'),
                                     (Des1: 'q'; Des2: 'qb'; Full: 'Black Queen'),
-                                    (Des1: 'R'; Des2: 'RB'; Full: 'White King'),
-                                    (Des1: 'r'; Des2: 'rn'; Full: 'Black King')
+                                    (Des1: 'K'; Des2: 'KB'; Full: 'White King'),
+                                    (Des1: 'k'; Des2: 'kn'; Full: 'Black King')
                                   ),
                                   // fr
                                   ( (Des1: 'P'; Des2: 'PB'; Full: 'Pion Blanc'),
@@ -182,6 +199,7 @@ const
   function PieceColor(APiece: TPieceType): TPieceColor;
 
   function DecodeAlgebraicNotation(const AValue: string; var ACell: TCellCoord): boolean;
+  function EncodeAlgebraicNotation(const ACell: TCellCoord): string;
 
 
 implementation
@@ -222,13 +240,13 @@ begin
   try
     case lowercase(AValue)[1] of
        'a': ACell.col:=colA;
-       'b': ACell.col:=colA;
-       'c': ACell.col:=colA;
-       'd': ACell.col:=colA;
-       'e': ACell.col:=colA;
-       'f': ACell.col:=colA;
-       'g': ACell.col:=colA;
-       'h': ACell.col:=colA;
+       'b': ACell.col:=colB;
+       'c': ACell.col:=colC;
+       'd': ACell.col:=colD;
+       'e': ACell.col:=colE;
+       'f': ACell.col:=colF;
+       'g': ACell.col:=colG;
+       'h': ACell.col:=colH;
     else
       raise exception.CreateFmt('"%s" is not a valid algebraic notation!', [AValue]);
     end;
@@ -252,6 +270,29 @@ begin
     raise;
   end;
 
+
+end;
+
+function EncodeAlgebraicNotation(const ACell: TCellCoord): string;
+begin
+  result := '';
+  try
+    case ACell.col of
+       colA: result := 'a';
+       colB: result := 'b';
+       colC: result := 'c';
+       colD: result := 'd';
+       colE: result := 'e';
+       colF: result := 'f';
+       colG: result := 'g';
+       colH: result := 'h';
+    end;
+
+    result += IntToStr(ord(ACell.row) + 1);
+
+  except
+    raise;
+  end;
 
 end;
 
@@ -339,13 +380,13 @@ begin
 
 end;
 
-{$DEFINE DEBUG_FEN}
-procedure TBoardObjHelper.LoadBoardFromFenString(const AFenString: string);
-type
-    TFenRows = array[TBoardRowRange] of string;
-var s: string;
+{not $DEFINE DEBUG_FEN}
+procedure TBoardObjHelper.LoadBoardFromFenString(const AFenString: string;
+                                                 const ALang: TLocalLangType = llEn);
+var s, FenPiece, sRow, sOut: string;
     row: TBoardRowType;
-    Rows: TFenRows;
+    col: TBoardColType;
+    scanCol, scanFenCol, totFenCol: integer;
 begin
   // Here's the FEN for the starting position:
   // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
@@ -373,18 +414,107 @@ begin
   // - - - - - - - - - - - - - - - - -
   // field 1: rows
   // - - - - - - - - - - - - - - - - -
-  for row:=row1 to row8 do
-    Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
 
   // debug fen rows
-  {$IFDEF DEBUG_FEN}
   for row:=row8 downto row1 do begin
-    Rows[row]:=ExtractWord(ord(row)+1, s, ['/']);
-    WriteLn('  [' ,row, ']: ' , Rows[row]);
-  end;
-  {$ENDIF}
+    sRow:=ExtractWord(8-ord(row), s, ['/']);
+    {$IFDEF DEBUG_FEN}
+    WriteLn('  [' ,row, ']: ' , sRow);
+    sout:='  ';
+    {$ENDIF}
+    scanCol:=0;
+    while scanCol < Length(sRow) do begin
+       inc(scanCol);
+       if scanCol = 1 then
+          col := colA
+       else
+          inc(col);
 
-  // Board[colA, rowWhite].PieceType:=cpRookWhite;
+       FenPiece:=copy(sRow, scanCol,1);
+
+       if FenPiece[1] in ['1','2','3','4','5','6','7','8'] then begin
+          totFenCol:=strtoint(FenPiece[1]);
+          for scanFenCol := 1 to totFenCol do begin
+              {$IFDEF DEBUG_FEN}
+              sOut += '[ ] ';
+              {$ENDIF}
+              if scanFenCol > 1 then
+                 inc(col);
+              Board[col, row].PieceType := cpEmpty;
+          end;
+
+       end else begin
+
+         if FenPiece = BoardLocal[ALang, cpPawnWhite].Des1 then begin
+            Board[col, row].PieceType := cpPawnWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpPawnWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpPawnBlack].Des1 then begin
+            Board[col, row].PieceType := cpPawnBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpPawnBlack].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpRookWhite].Des1 then begin
+            Board[col, row].PieceType := cpRookWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpRookWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpRookBlack].Des1 then begin
+            Board[col, row].PieceType := cpRookBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpRookBlack].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpKnightWhite].Des1 then begin
+            Board[col, row].PieceType := cpKnightWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpKnightWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpKnightBlack].Des1 then begin
+            Board[col, row].PieceType := cpKnightBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpKnightBlack].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpBishopWhite].Des1 then begin
+            Board[col, row].PieceType := cpBishopWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpBishopWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpBishopBlack].Des1 then begin
+            Board[col, row].PieceType := cpBishopBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpBishopBlack].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpQueenWhite].Des1 then begin
+            Board[col, row].PieceType := cpQueenWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpQueenWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpQueenBlack].Des1 then begin
+            Board[col, row].PieceType := cpQueenBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpQueenBlack].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpKingWhite].Des1 then begin
+            Board[col, row].PieceType := cpKingWhite;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpKingWhite].Full;
+            {$ENDIF}
+         end else if FenPiece = BoardLocal[ALang, cpKingBlack].Des1 then begin
+            Board[col, row] .PieceType:= cpKingBlack;
+            {$IFDEF DEBUG_FEN}
+            sOut += BoardLocal[ALang, cpKingBlack].Full;
+            {$ENDIF}
+         end;
+         {$IFDEF DEBUG_FEN}
+         sOut += ' ';
+         {$ENDIF}
+       end;
+    end; // col
+    {$IFDEF DEBUG_FEN}
+    WriteLn(sOut);
+    {$ENDIF}
+  end; // for row
 
 
   // - - - - - - - - - - - - - - - - -
@@ -485,7 +615,7 @@ const
 var col: TBoardColType;
     row: TBoardRowType;
     p:TPiece;
-    sOut: string;
+    sOut, sc: string;
 begin
   // test
   if not (CellWidth in [1,3,4]) then
@@ -529,7 +659,22 @@ begin
       end;
     end;
     // write(' ', ord(row)+1);
-    sOut += Format(' %d', [ord(row)+1]) + LineEnding;
+    sOut += Format(' %d', [ord(row)+1]);
+    case row of
+       row8: sOut += '    ' + ColorLocal[ALang, ActiveColor].Full;
+       row7: begin
+               sOut += '    ' + ColorLocal[ALang, pcWhite].Des1+' =';
+               if castlWhiteKSide in Castlings then begin sOut += ' OO'; end;
+               if castlWhiteQSide in Castlings then begin sOut += ' OOO'; end;
+               sOut += ' / ' + ColorLocal[ALang, pcBlack].Des1+' =';
+               if castlBlackKSide in Castlings then begin sOut += ' OO'; end;
+               if castlBlackQSide in Castlings then begin sOut += ' OOO'; end;
+             end;
+       row6: if CanEnPassant then begin
+                sOut += '    En Passant ' + EncodeAlgebraicNotation(EnPassant);
+             end;
+    end;
+    sOut += LineEnding;
     case CellWidth of
       3: sOut += HORIZ_SEPAARTOR_3 + LineEnding;
       4: sOut += HORIZ_SEPAARTOR_4 + LineEnding;
