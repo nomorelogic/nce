@@ -123,7 +123,6 @@ begin
        end;
     end;
 
-    FOwnColor:=pcWhite;
     if HasOption('o', 'own') then begin
        s:=UpperCase(GetOptionValue('o'));
        if (s<>'') and (s[1]='B') then

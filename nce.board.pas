@@ -111,9 +111,12 @@ type
     function ToString(const UsePieceColor: TPieceColor = pcWhite;
                       const CellWidth: integer = 1;
                       const ALang: TLocalLangType = llEn): string;
+
+    // create all child boards
     procedure ExpandAll(const AMoveColor: TPieceColor; const ALang: TLocalLangType = llEn);
 
-    procedure GetMoves(const ACell: TCellCoord; var AMoveArray: TPieceMoves);
+    procedure GetMoves(const Acol: TBoardColType; const Arow: TBoardRowType; var AMoveArray: TPieceMoves); overload;
+    procedure GetMoves(const ACell: TCellCoord; var AMoveArray: TPieceMoves); overload;
 
     function MoveName(const Acol: TBoardColType; const Arow: TBoardRowType; const ALang: TLocalLangType = llEn): string;
   end;
@@ -326,6 +329,8 @@ var col: TBoardColType;
       rowWhite, rowWhitePawns,
       rowBlack, rowBlackPawns: TBoardRowType;
 begin
+  ActiveColor:=UsePieceColor;
+
   // set rows
   case UsePieceColor of
      pcWhite: begin
@@ -700,6 +705,10 @@ var col: TBoardColType;
     p:TPiece;
     // StartBoard
     SetOfPieces: set of TPieceType;
+    Moves: TPieceMoves;
+    scan: integer;
+    Cell: TCellCoord;
+    sOutLine: string;
 begin
   // allocate resources
   if not Assigned(ChildBoards) then
@@ -719,17 +728,45 @@ begin
 
     for col:=colA to colH do begin
       p:=Board[col, row];
+      Moves.MaxMove:=-1;
 
-      if p.PieceType in SetOfPieces then
-         WriteLn(Format('[%s%s] %s - %s / %s', [ BoardColName[col], BoardRowName[row],
-                                            CellNames[col, row],
-                                            BoardLocal[ALang, p.PieceType ].Des1,
-                                            BoardLocal[ALang, p.PieceType ].Full]));
+      if p.PieceType in SetOfPieces then begin
+         sOutLine := Format('[%s] %s / %-15.15s : ',
+                            [ CellNames[col, row],
+                              BoardLocal[ALang, p.PieceType ].Des1,
+                              BoardLocal[ALang, p.PieceType ].Full] );
+         if p.PieceType in [cpPawnWhite, cpPawnBlack] then begin
+            Cell.col:=col;
+            Cell.row:=row;
+            GetMoves(Cell, Moves);
+         end;
 
-    end;
+         // here
+         // ./nce -l en -o w -p startpos -w 1 --fen "3" -x ALL
+         // BUG a2, moves in a3 and a5!!!! OK = a4
+
+         if Moves.MaxMove >= 0 then begin
+            for scan:=0 to Moves.MaxMove do begin;
+                sOutLine += EncodeAlgebraicNotation( Moves.Moves[scan] ) + ' ';
+            end;
+         end; // if moves >= 0
+
+         WriteLn(sOutLine);
+      end; // if pieces in setofpieces
+
+    end; // for col
 
   end; // for row
 
+end;
+
+procedure TBoardObjHelper.GetMoves(const Acol: TBoardColType;
+  const Arow: TBoardRowType; var AMoveArray: TPieceMoves);
+var Cell: TCellCoord;
+begin
+  Cell.col:=Acol;
+  Cell.row:=Arow;
+  GetMoves(Cell, AMoveArray);
 end;
 
 procedure TBoardObjHelper.GetMoves(const ACell: TCellCoord;
@@ -745,12 +782,14 @@ var Piece: TPiece;
 
   procedure _GetPawnMoves;
 
-      procedure _GetPawnMoves_Forward1_Capture;
+      function _GetPawnMoves_Forward1_Capture: boolean;
       var NewCell: TCellCoord;
           CanTest, CanMove, Captured: boolean;
           SaveCol: TBoardColType;
           CapturedType: TPieceType;
       begin
+        result := False;
+
         // - - - - - - - - - - - - - - - - - - - -
         // move forward by 1
         // - - - - - - - - - - - - - - - - - - - -
@@ -781,8 +820,10 @@ var Piece: TPiece;
         // test
         if CanTest then begin
            CanMove := Board[NewCell.col, NewCell.row].PieceType = cpEmpty;
-           if CanMove then
+           if CanMove then begin
               _AddMove(NewCell);
+              result := True;
+           end;
         end; // CanTest
 
 
@@ -802,7 +843,7 @@ var Piece: TPiece;
               if Piece.PieceType = cpPawnWhite then
                  Captured:=IsBlack(CapturedType);
               // pawn black
-              if Piece.PieceType = cpPawnWhite then
+              if Piece.PieceType = cpPawnBlack then
                  Captured:=IsWhite(CapturedType);
               // add
               if Captured then
@@ -852,7 +893,7 @@ var Piece: TPiece;
         if Piece.PieceType = cpPawnWhite then begin
            if (ACell.row = row2) then begin
               CanTest:=True;
-              NewCell.row:=TBoardRowType(4);
+              NewCell.row:=row4;
            end;
         end; // pawn white
 
@@ -860,7 +901,7 @@ var Piece: TPiece;
         if Piece.PieceType = cpPawnBlack then begin
            if (ACell.row = row7) then begin
               CanTest:=True;
-              NewCell.row:=TBoardRowType(5);
+              NewCell.row:=row5;
            end;
         end; // pawn black
 
@@ -918,8 +959,8 @@ var Piece: TPiece;
   begin // _GetPawnMoves
 
     Piece:=Board[ACell.col, ACell.row];
-    _GetPawnMoves_Forward1_Capture;
-    _GetPawnMoves_Forward2;
+    if _GetPawnMoves_Forward1_Capture then
+       _GetPawnMoves_Forward2;
     // _GetPawnMoves_CaptureSx;
 
   end; // _GetPawnMoves
@@ -991,7 +1032,7 @@ end;
 constructor TBoardObj.Create;
 begin
   Castlings:=[];
-
+  ActiveColor:=pcWhite;
   ChildBoards:=nil;
 end;
 
