@@ -735,15 +735,11 @@ begin
                             [ CellNames[col, row],
                               BoardLocal[ALang, p.PieceType ].Des1,
                               BoardLocal[ALang, p.PieceType ].Full] );
-         if p.PieceType in [cpPawnWhite, cpPawnBlack] then begin
+         // if p.PieceType in [cpPawnWhite, cpPawnBlack] then begin
             Cell.col:=col;
             Cell.row:=row;
             GetMoves(Cell, Moves);
-         end;
-
-         // here
-         // ./nce -l en -o w -p startpos -w 1 --fen "3" -x ALL
-         // BUG a2, moves in a3 and a5!!!! OK = a4
+         // end;
 
          if Moves.MaxMove >= 0 then begin
             for scan:=0 to Moves.MaxMove do begin;
@@ -958,7 +954,6 @@ var Piece: TPiece;
 
   begin // _GetPawnMoves
 
-    Piece:=Board[ACell.col, ACell.row];
     if _GetPawnMoves_Forward1_Capture then
        _GetPawnMoves_Forward2;
     // _GetPawnMoves_CaptureSx;
@@ -971,7 +966,85 @@ var Piece: TPiece;
   end;
 
   procedure _GetKnightMoves;
+  type TKOffset = record
+          ColOffset: integer;
+          RowOffset: integer;
+       end;
+       TOffsets = array[0..7] of TKOffset;
+  const KOffsets: TOffsets = ( (ColOffset:  1; RowOffset:  2),
+                               (ColOffset:  2; RowOffset:  1),
+                               (ColOffset:  2; RowOffset: -1),
+                               (ColOffset:  1; RowOffset: -2),
+                               (ColOffset: -1; RowOffset: -2),
+                               (ColOffset: -2; RowOffset: -1),
+                               (ColOffset: -2; RowOffset:  1),
+                               (ColOffset: -1; RowOffset:  2) );
+  var TestMoves: TPieceMoves;
+      NewCell: TCellCoord;
+      // NewCol: TBoardColType;
+      // NewRow: TBoardRowType;
+      NewColNum: integer;
+      NewRowNum: integer;
+      NewCellContent: TPieceType;
+      scan: integer;
+
+      function _KnightCanMove: boolean;
+      begin
+        if NewCellContent = cpEmpty then begin
+           result := True;
+        end else begin
+           if Piece.PieceType = cpKnightWhite then
+              result := IsBlack(NewCellContent)
+           else
+              result := IsWhite(NewCellContent);
+        end;
+      end; // _KnightCanMove
+
+
   begin
+     TestMoves.MaxMove:=-1;
+     // detect moves to test
+
+     for scan := 0 to 7 do begin
+       NewColNum := ord(ACell.col) + KOffsets[scan].ColOffset;
+       NewRowNum := ord(ACell.row) + KOffsets[scan].RowOffset;
+       if (NewColNum in [0..7]) and (NewRowNum in [0..7]) then begin
+          NewCell.col:=TBoardColType(NewColNum);
+          NewCell.row:=TBoardRowType(NewRowNum);
+          NewCellContent := Board[NewCell.col, NewCell.row].PieceType;
+          if _KnightCanMove then
+             _AddMove(NewCell);
+       end;
+     end;
+
+
+     {
+     NewColNum := ord(ACell.col) + 1;
+     if NewColNum <= ord(colH) then begin
+
+        // 1'clock -> N/NE
+        NewRowNum := ord(ACell.row) + 2;
+        if NewRowNum <= ord(row8) then begin
+           NewCell.col:=TBoardColType(NewColNum);
+           NewCell.row:=TBoardRowType(NewRowNum);
+           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
+           if _KnightCanMove then
+              _AddMove(NewCell);
+        end;
+
+        // 5'clock -> S/SE
+        NewRowNum := ord(ACell.row) - 2;
+        if NewRowNum >= ord(row1) then begin
+           NewCell.col:=TBoardColType(NewColNum);
+           NewCell.row:=TBoardRowType(NewRowNum);
+           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
+           if _KnightCanMove then
+              _AddMove(NewCell);
+        end;
+
+     end;
+     }
+
 
   end;
 
@@ -993,7 +1066,8 @@ var Piece: TPiece;
 begin
   // get possible moves for a Piece in a Cell
   AMoveArray.MaxMove:=-1;
-  case Board[ACell.col, ACell.row].PieceType of
+  Piece:=Board[ACell.col, ACell.row];
+  case Piece.PieceType of
      cpPawnWhite,   cpPawnBlack  : _GetPawnMoves;
      cpRookWhite,   cpRookBlack  : _GetRookMoves;
      cpKnightWhite, cpKnightBlack: _GetKnightMoves;
