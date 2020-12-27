@@ -130,13 +130,16 @@ begin
     end;
 
     if HasOption('p', 'position') then begin
-       if not Assigned(FBoardObj) then
+       if not Assigned(FBoardObj) then begin
           FBoardObj:=TBoardObj.Create;
+          FBoardObj.ActiveColor:=OwnColor;
+       end;
 
        s:=UpperCase(GetOptionValue('p'));
-       if s = 'STARTPOS' then
+       if s = 'STARTPOS' then begin
           // ResetBoard(OwnColor, FBoard);
-          StartPosition(BoardObj, OwnColor);
+          StartPosition(BoardObj, FBoardObj.ActiveColor);
+       end;
     end;
 
     if HasOption('f', 'fen') then begin
@@ -149,10 +152,14 @@ begin
           i:=FindOptionIndex('fen', l);
        if i>0 then begin
           s:=Params[ i + 1 ];
-          if s = '1' then s:='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+          if s = '1' then s:='1nb1kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
           if s = '2' then s:='rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
           if s = '3' then s:='rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2';
           if s = '4' then s:='rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2';
+          if s = '5' then s:='rnbqkbnr/pp1ppppp/8/2p5/3BP3/5N2/PPPP1PPP/RN1QKB1R w KQkq - 1 2';
+          if s = '6' then s:='rnbqkbnr/pp1ppppp/8/2p5/2R1P3/5N2/1PPP1PP1/RN1QKB1R w KQkq - 1 2';
+          if s = '7' then s:='rnbqkbnr/pp1ppppp/8/2p5/2Q1P3/5N2/1PPP1PP1/RN11KB1R w KQkq - 1 2';
+          if s = '8' then s:='rnbqkbnr/pp1ppppp/8/2p5/2q1r3/5N2/1PPP1PP1/RN11KB1R b KQkq - 1 2';
           FenPosition(BoardObj, s);
        end;
     end;
@@ -178,7 +185,7 @@ begin
     if HasOption('x', 'expand') then begin
        s:=UpperCase(GetOptionValue('x'));
        if s = 'ALL' then
-          BoardObj.ExpandAll(OwnColor, Language);
+          BoardObj.ExpandAll(Language);
     end;
 
 

@@ -76,6 +76,10 @@ type
   TBoardRowName = array[TBoardRowType] of char;
   TCellNames = array[TBoardColRange] of array[TBoardRowRange] of string;
 
+  TMoveType = (mtCellEmpty, mtCapture, mtUnableToMove);
+  TDirection = (brNW, brNE, brSW, brSE, brN, brE, brS, NrW);
+
+
   { TBoardObj }
 
   TBoardObj = class
@@ -101,6 +105,8 @@ type
   TBoardObjHelper = class helper for TBoardObj
   private
     // procedure DoExpand_
+    function PieceCanMove(const ASrc, ADst: TPieceType): TMoveType;
+
   public
     procedure Clear;
 
@@ -113,7 +119,9 @@ type
                       const ALang: TLocalLangType = llEn): string;
 
     // create all child boards
-    procedure ExpandAll(const AMoveColor: TPieceColor; const ALang: TLocalLangType = llEn);
+    procedure ExpandAll(const ALang: TLocalLangType = llEn);
+    procedure CreateChildBoards(const ACol: TBoardColType; const ARow: TBoardRowType;
+                                const AMoveArray: TPieceMoves; const ALang: TLocalLangType = llEn);
 
     procedure GetMoves(const Acol: TBoardColType; const Arow: TBoardRowType; var AMoveArray: TPieceMoves); overload;
     procedure GetMoves(const ACell: TCellCoord; var AMoveArray: TPieceMoves); overload;
@@ -202,7 +210,8 @@ const
   function PieceColor(APiece: TPieceType): TPieceColor;
 
   function DecodeAlgebraicNotation(const AValue: string; var ACell: TCellCoord): boolean;
-  function EncodeAlgebraicNotation(const ACell: TCellCoord): string;
+  function EncodeAlgebraicNotation(const ACell: TCellCoord): string; overload;
+  function EncodeAlgebraicNotation(const ACol: TBoardColType; const ARow: TBoardRowType): string; overload;
 
 
 implementation
@@ -299,9 +308,52 @@ begin
 
 end;
 
+function EncodeAlgebraicNotation(const ACol: TBoardColType; const ARow: TBoardRowType): string;
+begin
+  result := '';
+  try
+    case ACol of
+       colA: result := 'a';
+       colB: result := 'b';
+       colC: result := 'c';
+       colD: result := 'd';
+       colE: result := 'e';
+       colF: result := 'f';
+       colG: result := 'g';
+       colH: result := 'h';
+    end;
+
+    result += IntToStr(ord(ARow) + 1);
+
+  except
+    raise;
+  end;
+
+end;
+
 
 
 { TBoardObjHelper }
+
+function TBoardObjHelper.PieceCanMove(const ASrc, ADst: TPieceType): TMoveType;
+begin
+  result :=mtUnableToMove;
+
+  if ADst = cpEmpty then begin
+     result := mtCellEmpty;
+  end else begin
+     if ASrc = cpEmpty then
+        raise exception.Create('Source piece unspecified (empty)!');
+
+     if IsWhite(ASrc) then begin
+        if IsBlack(ADst) then
+           result := mtCapture
+     end else begin
+        if IsWhite(ADst) then
+           result := mtCapture
+     end;
+  end;
+end; // _KnightCanMove
 
 procedure TBoardObjHelper.Clear;
 var col: TBoardColType;
@@ -592,6 +644,10 @@ begin
   s:=ExtractWord(6, AFenString, [' ']);
   try
     Fullmove:=StrToInt(s);
+
+    if Name='' then
+       Name:=s;
+
     {$IFDEF DEBUG_FEN}
     Writeln('Fullmove = ', Fullmove, ' ');
     {$ENDIF}
@@ -698,8 +754,7 @@ begin
 
 end;
 
-procedure TBoardObjHelper.ExpandAll(const AMoveColor: TPieceColor;
-  const ALang: TLocalLangType);
+procedure TBoardObjHelper.ExpandAll(const ALang: TLocalLangType);
 var col: TBoardColType;
     row: TBoardRowType;
     p:TPiece;
@@ -715,12 +770,12 @@ begin
      ChildBoards:=TStringToPointerTree.Create(false);
 
   // init
-  case AMoveColor of
+  case ActiveColor of
     pcWhite: SetOfPieces := [cpPawnWhite, cpRookWhite, cpKnightWhite, cpBishopWhite, cpQueenWhite,  cpKingWhite];
     pcBlack: SetOfPieces := [cpPawnBlack, cpRookBlack, cpKnightBlack, cpBishopBlack, cpQueenBlack,  cpKingBlack];
   end;
 
-  Writeln('Move: ', AMoveColor);
+  Writeln('Move: ', ActiveColor);
 
   // loop on cells
   for row:=row8 downto row1 do begin
@@ -745,14 +800,67 @@ begin
             for scan:=0 to Moves.MaxMove do begin;
                 sOutLine += EncodeAlgebraicNotation( Moves.Moves[scan] ) + ' ';
             end;
+
          end; // if moves >= 0
 
          WriteLn(sOutLine);
+
+         // debug creazione nuova scacchiera
+         if Moves.MaxMove >= 0 then
+            CreateChildBoards(col, row, Moves);
+
       end; // if pieces in setofpieces
 
     end; // for col
 
   end; // for row
+
+end;
+
+procedure TBoardObjHelper.CreateChildBoards(const ACol: TBoardColType;
+  const ARow: TBoardRowType; const AMoveArray: TPieceMoves;
+  const ALang: TLocalLangType);
+var scan: integer;
+    ChildBoard: TBoardObj;
+    s: string;
+    // SrcCell: TCellCoord;
+begin
+
+  for scan:=0 to AMoveArray.MaxMove do begin;
+
+      ChildBoard:=TBoardObj.Create;
+      // ChildBoard.Name:=Format('%s-> ', [ Fullmove ]);
+
+      // s := BoardLocal[ALang, Board[ACol, ARow].PieceType ].Des1;
+      // SrcCell.col:=ACol;
+      // SrcCell.row:=ARow;
+      // s += EncodeAlgebraicNotation(SrcCell);
+
+      if ActiveColor = pcWhite then begin
+         s:=Format('%d. %s%s-%s', [
+                                Fullmove+1,
+                                BoardLocal[ALang, Board[ACol, ARow].PieceType ].Des1,
+                                EncodeAlgebraicNotation(ACol, ARow),
+                                EncodeAlgebraicNotation(AMoveArray.Moves[scan])
+                             ]);
+         ChildBoard.Fullmove:=Fullmove+1;
+      end else begin
+        s:=Format('%s %s%s-%s', [
+                               Name,
+                               BoardLocal[ALang, Board[ACol, ARow].PieceType ].Des1,
+                               EncodeAlgebraicNotation(ACol, ARow),
+                               EncodeAlgebraicNotation(AMoveArray.Moves[scan])
+                            ]);
+        ChildBoard.Fullmove:=Fullmove;
+      end;
+      ChildBoard.Name:=s;
+      ChildBoard.Board:=Board;
+      WriteLn('create board ', s);
+
+      ChildBoards[ChildBoard.Name] := @ChildBoard;
+      WriteLn(ChildBoard.ToString(ChildBoard.ActiveColor, 1, ALang));
+
+  end;
 
 end;
 
@@ -960,10 +1068,120 @@ var Piece: TPiece;
 
   end; // _GetPawnMoves
 
-  procedure _GetRookMoves;
-  begin
 
-  end;
+  {UNDEFINE DEBUG_MOVE_DIRECTIONS}
+  procedure _GetDirectionMoves(const ScanDiagonal, ScanPerpendicular: boolean; const MaxMoves: integer = 7);
+  type TBOffset = record
+          ColOffset: integer;
+          RowOffset: integer;
+       end;
+       TOffsets = array[TDirection] of TBOffset;
+       TPieceCanMoveAgain = array[TDirection] of boolean;
+  const BOffsets: TOffsets = ( (ColOffset: -1; RowOffset:  1), // NW
+                               (ColOffset:  1; RowOffset:  1), // NE
+                               (ColOffset: -1; RowOffset: -1), // SW
+                               (ColOffset:  1; RowOffset: -1), // SE
+
+                               (ColOffset:  0; RowOffset:  1), // N
+                               (ColOffset:  1; RowOffset:  0), // E
+                               (ColOffset:  0; RowOffset: -1), // S
+                               (ColOffset: -1; RowOffset:  0)  // W
+                             );
+  var NewCell: TCellCoord;
+      PieceCanMoveAgain: TPieceCanMoveAgain;
+      FromDirection, ToDirection: TDirection;
+      // NewCol: TBoardColType;
+      // NewRow: TBoardRowType;
+      NewColNum: integer;
+      NewRowNum: integer;
+      NewCellContent: TPieceType;
+      scan: integer;
+      ScanRoad:TDirection;
+  begin
+    // init
+    for ScanRoad := low(PieceCanMoveAgain) to high(PieceCanMoveAgain) do
+        PieceCanMoveAgain[ScanRoad] := False;
+
+    // TDirection = (brNW, brNE, brSW, brSE, brN, brE, brS, NrW);
+    FromDirection:=brNW;
+    ToDirection:=NrW;
+    if not ScanDiagonal then
+       FromDirection:=brN;
+    if not ScanPerpendicular then
+       ToDirection:=brSE;
+
+    for ScanRoad := FromDirection to ToDirection do
+        PieceCanMoveAgain[ScanRoad] := True;
+
+    {$IFDEF DEBUG_MOVE_DIRECTIONS}
+    Writeln(ACell.col, ', ', ACell.row, ' -> ');
+    {$ENDIF}
+    for ScanRoad:=FromDirection to ToDirection do begin
+        {$IFDEF DEBUG_MOVE_DIRECTIONS}
+        WriteLn('  ', ScanRoad, ' -> ');
+        {$ENDIF}
+
+        for scan := 0 to MaxMoves - 1 do begin
+            {$IFDEF DEBUG_MOVE_DIRECTIONS}
+            Write('  Loop: ', scan);
+            {$ENDIF}
+            if PieceCanMoveAgain[ScanRoad] then begin
+
+              NewColNum := ord(ACell.col) + (BOffsets[ScanRoad].ColOffset * (scan+1));
+              NewRowNum := ord(ACell.row) + (BOffsets[ScanRoad].RowOffset * (scan+1));
+
+              if (NewColNum in [0..7]) and (NewRowNum in [0..7]) then begin
+                 {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                 Write('   -> ', TBoardColType(NewColNum), ', ', TBoardRowType(NewRowNum), ' = ');
+                 {$ENDIF}
+                 NewCell.col:=TBoardColType(NewColNum);
+                 NewCell.row:=TBoardRowType(NewRowNum);
+                 NewCellContent := Board[NewCell.col, NewCell.row].PieceType;
+                 case PieceCanMove(Piece.PieceType, NewCellContent) of
+                    mtUnableToMove: begin
+                       {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                       WriteLn('invalid content');
+                       {$ENDIF}
+                       PieceCanMoveAgain[ScanRoad] := False;
+                    end;
+                    mtCellEmpty: begin
+                       {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                       WriteLn('can move');
+                       {$ENDIF}
+                       _AddMove(NewCell);
+                    end;
+                    mtCapture: begin
+                       {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                       WriteLn('capture');
+                       {$ENDIF}
+                       _AddMove(NewCell);
+                       PieceCanMoveAgain[ScanRoad] := False;
+                    end;
+                 end;
+              end else begin
+                 PieceCanMoveAgain[ScanRoad] := False;
+                 {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                 WriteLn('      ', 'out of board');
+                 {$ENDIF}
+              end;
+
+            end else begin
+                {$IFDEF DEBUG_MOVE_DIRECTIONS}
+                WriteLn('      ', 'can''t move');
+                {$ENDIF}
+            end;
+
+            if not PieceCanMoveAgain[ScanRoad] then begin
+               {$IFDEF DEBUG_MOVE_DIRECTIONS}
+               WriteLn('-- stop loop ---');
+               {$ENDIF}
+               break;
+            end;
+
+        end; // scan 0..6
+    end; // scan roads
+
+  end; // _GetPerpendicularMoves
 
   procedure _GetKnightMoves;
   type TKOffset = record
@@ -979,7 +1197,7 @@ var Piece: TPiece;
                                (ColOffset: -2; RowOffset: -1),
                                (ColOffset: -2; RowOffset:  1),
                                (ColOffset: -1; RowOffset:  2) );
-  var TestMoves: TPieceMoves;
+  var // TestMoves: TPieceMoves;
       NewCell: TCellCoord;
       // NewCol: TBoardColType;
       // NewRow: TBoardRowType;
@@ -1002,7 +1220,7 @@ var Piece: TPiece;
 
 
   begin
-     TestMoves.MaxMove:=-1;
+     // TestMoves.MaxMove:=-1;
      // detect moves to test
 
      for scan := 0 to 7 do begin
@@ -1017,51 +1235,118 @@ var Piece: TPiece;
        end;
      end;
 
+  end; // _GetKnightMoves
 
-     {
-     NewColNum := ord(ACell.col) + 1;
-     if NewColNum <= ord(colH) then begin
-
-        // 1'clock -> N/NE
-        NewRowNum := ord(ACell.row) + 2;
-        if NewRowNum <= ord(row8) then begin
-           NewCell.col:=TBoardColType(NewColNum);
-           NewCell.row:=TBoardRowType(NewRowNum);
-           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
-           if _KnightCanMove then
-              _AddMove(NewCell);
-        end;
-
-        // 5'clock -> S/SE
-        NewRowNum := ord(ACell.row) - 2;
-        if NewRowNum >= ord(row1) then begin
-           NewCell.col:=TBoardColType(NewColNum);
-           NewCell.row:=TBoardRowType(NewRowNum);
-           CapturedType := Board[NewCell.col, NewCell.row].PieceType;
-           if _KnightCanMove then
-              _AddMove(NewCell);
-        end;
-
-     end;
-     }
-
-
-  end;
-
-  procedure _GetBishopMoves;
+  {UNDEFINE DEBUG_MOVE_DIAGONAL}
+  procedure _GetDiagonalMoves;
+  type TBOffset = record
+          ColOffset: integer;
+          RowOffset: integer;
+       end;
+       TBRoads = (brNW, brNE, brSW, brSE);
+       TOffsets = array[TBRoads] of TBOffset; // NW, NE, SE, SO
+       TBCanMove = array[TBRoads] of boolean;
+  const BOffsets: TOffsets = ( (ColOffset: -1; RowOffset:  1), // NW
+                               (ColOffset:  1; RowOffset:  1), // NE
+                               (ColOffset: -1; RowOffset: -1), // SW
+                               (ColOffset:  1; RowOffset: -1)  // SE
+                             );
+  var NewCell: TCellCoord;
+      BCanMove: TBCanMove;
+      // NewCol: TBoardColType;
+      // NewRow: TBoardRowType;
+      NewColNum: integer;
+      NewRowNum: integer;
+      NewCellContent: TPieceType;
+      scan: integer;
+      ScanRoad:TBRoads;
   begin
+    // init
+    BCanMove[brNW] :=True;
+    BCanMove[brNE] :=True;
+    BCanMove[brSW] :=True;
+    BCanMove[brSE] :=True;
+    // for scan := 0 to 6 do begin
+    Writeln(ACell.col, ', ', ACell.row, ' -> ');
+    for ScanRoad:=brNW to brSE do begin
+        {$IFDEF DEBUG_MOVE_DIAGONAL}
+        WriteLn('  ', ScanRoad, ' -> ');
+        {$ENDIF}
 
-  end;
+        for scan := 0 to 6 do begin
+            {$IFDEF DEBUG_MOVE_DIAGONAL}
+            Write('  Loop: ', scan);
+            {$ENDIF}
+            if BCanMove[ScanRoad] then begin
 
+              NewColNum := ord(ACell.col) + (BOffsets[ScanRoad].ColOffset * (scan+1));
+              NewRowNum := ord(ACell.row) + (BOffsets[ScanRoad].RowOffset * (scan+1));
+
+              if (NewColNum in [0..7]) and (NewRowNum in [0..7]) then begin
+                 {$IFDEF DEBUG_MOVE_DIAGONAL}
+                 Write('   -> ', TBoardColType(NewColNum), ', ', TBoardRowType(NewRowNum), ' = ');
+                 {$ENDIF}
+                 NewCell.col:=TBoardColType(NewColNum);
+                 NewCell.row:=TBoardRowType(NewRowNum);
+                 NewCellContent := Board[NewCell.col, NewCell.row].PieceType;
+                 case PieceCanMove(Piece.PieceType, NewCellContent) of
+                    mtUnableToMove: begin
+                       {$IFDEF DEBUG_MOVE_DIAGONAL}
+                       WriteLn('invalid content');
+                       {$ENDIF}
+                       BCanMove[ScanRoad] := False;
+                    end;
+                    mtCellEmpty: begin
+                       {$IFDEF DEBUG_MOVE_DIAGONAL}
+                       WriteLn('can move');
+                       {$ENDIF}
+                       _AddMove(NewCell);
+                    end;
+                    mtCapture: begin
+                       {$IFDEF DEBUG_MOVE_DIAGONAL}
+                       WriteLn('capture');
+                       {$ENDIF}
+                       _AddMove(NewCell);
+                       BCanMove[ScanRoad] := False;
+                    end;
+                 end;
+              end else begin
+                 BCanMove[ScanRoad] := False;
+                 {$IFDEF DEBUG_MOVE_DIAGONAL}
+                 WriteLn('      ', 'out of board');
+                 {$ENDIF}
+              end;
+
+            end else begin
+                {$IFDEF DEBUG_MOVE_DIAGONAL}
+                WriteLn('      ', 'can''t move');
+                {$ENDIF}
+            end;
+
+            if not BCanMove[ScanRoad] then begin
+               {$IFDEF DEBUG_MOVE_DIAGONAL}
+               WriteLn('-- stop loop ---');
+               {$ENDIF}
+               break;
+            end;
+
+        end; // scan 0..6
+    end; // scan roads
+
+  end; // _GetDiagonalMoves
+
+  {
   procedure _GetQueenMoves;
   begin
 
   end;
-
+  }
+  {
   procedure _GetKingMoves;
   begin
 
   end;
+  }
 
 begin
   // get possible moves for a Piece in a Cell
@@ -1069,11 +1354,14 @@ begin
   Piece:=Board[ACell.col, ACell.row];
   case Piece.PieceType of
      cpPawnWhite,   cpPawnBlack  : _GetPawnMoves;
-     cpRookWhite,   cpRookBlack  : _GetRookMoves;
+     cpRookWhite,   cpRookBlack  : _GetDirectionMoves(False, True);
      cpKnightWhite, cpKnightBlack: _GetKnightMoves;
-     cpBishopWhite, cpBishopBlack: _GetBishopMoves;
-     cpQueenWhite,  cpQueenBlack : _GetQueenMoves;
-     cpKingWhite,   cpKingBlack  : _GetKingMoves;
+     cpBishopWhite, cpBishopBlack: _GetDirectionMoves(True, False); // _GetDiagonalMoves;
+     cpQueenWhite,  cpQueenBlack : _GetDirectionMoves(True, True); // _GetQueenMoves;
+     cpKingWhite,   cpKingBlack  : {$DEFINE DEBUG_MOVE_DIRECTIONS}
+                                   _GetDirectionMoves(True, True, 1); // _GetKingMoves;
+                                   {$UNDEF DEBUG_MOVE_DIRECTIONS}
+
   end;
 
 end;
@@ -1119,6 +1407,57 @@ begin
 
   inherited Destroy;
 end;
+
+
+{
+begin
+  // init
+  BCanMove[brNW] :=True;
+  BCanMove[brNE] :=True;
+  BCanMove[brSW] :=True;
+  BCanMove[brSE] :=True;
+  for scan := 0 to 6 do begin
+      Writeln(ACell.col, ', ', ACell.row, ' -> ');
+      if not (BCanMove[brNW] or BCanMove[brNE] or BCanMove[brSW] or BCanMove[brSE]) then begin
+         WriteLn('-- stop loop ---');
+         break;
+      end;
+
+
+      for ScanRoad:=brNW to brSE do begin
+          Write('  ', ScanRoad, ' -> ');
+          if BCanMove[ScanRoad] then begin
+
+            // Writeln(ScanRoad);
+            NewColNum := ord(ACell.col) + (BOffsets[ScanRoad].ColOffset * (scan+1));
+            NewRowNum := ord(ACell.row) + (BOffsets[ScanRoad].RowOffset * (scan+1));
+
+            if (NewColNum in [0..7]) and (NewRowNum in [0..7]) then begin
+               Write(TBoardColType(NewColNum), ', ', TBoardRowType(NewRowNum), ' = ');
+               NewCell.col:=TBoardColType(NewColNum);
+               NewCell.row:=TBoardRowType(NewRowNum);
+               NewCellContent := Board[NewCell.col, NewCell.row].PieceType;
+               if PieceCanMove(Piece.PieceType, NewCellContent) then begin
+                  WriteLn('can move');
+                  _AddMove(NewCell);
+               end else begin
+                 WriteLn('invalid content');
+                 BCanMove[ScanRoad] := False;
+               end;
+            end else begin
+               BCanMove[ScanRoad] := False;
+               WriteLn('out of board');
+            end;
+
+          end else begin
+              WriteLn('can''t move');
+          end;
+      end;
+  end; // scan
+
+end; // _GetBishopMoves
+
+}
 
 end.
 
