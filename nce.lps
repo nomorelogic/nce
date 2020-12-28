@@ -3,13 +3,13 @@
   <ProjectSession>
     <Version Value="11"/>
     <BuildModes Active="Debug"/>
-    <Units Count="9">
+    <Units Count="11">
       <Unit0>
         <Filename Value="nce.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="147"/>
-        <CursorPos X="39" Y="167"/>
-        <UsageCount Value="61"/>
+        <TopLine Value="179"/>
+        <CursorPos Y="196"/>
+        <UsageCount Value="63"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -17,14 +17,14 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="835"/>
-        <CursorPos X="67" Y="861"/>
-        <FoldState Value=" T3*O2q011i"/>
-        <UsageCount Value="61"/>
+        <TopLine Value="1400"/>
+        <CursorPos X="26" Y="1418"/>
+        <FoldState Value=" T3*T2q011$"/>
+        <UsageCount Value="63"/>
         <Bookmarks Count="3">
           <Item0 Y="77" ID="1"/>
-          <Item1 Y="803"/>
-          <Item2 X="5" Y="829" ID="9"/>
+          <Item1 X="19" Y="1430"/>
+          <Item2 X="3" Y="863" ID="9"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -60,148 +60,164 @@
       <Unit6>
         <Filename Value="../../../fpcdeluxe/fpcsrc/packages/fcl-base/examples/avltreetest.pp"/>
         <UnitName Value="AvlTreeTest"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="36"/>
         <CursorPos X="4" Y="52"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="../../../fpcdeluxe/fpcsrc/packages/fcl-base/src/avl_tree.pp"/>
         <UnitName Value="AVL_Tree"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="-1"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="../../../fpcdeluxe/lazarus/components/lazutils/avglvltree.pas"/>
         <UnitName Value="AvgLvlTree"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="169"/>
         <CursorPos X="15" Y="184"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit8>
+      <Unit9>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <UnitName Value="AvgLvlTree"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="1308"/>
+        <CursorPos Y="1322"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/laz_avl_tree.pp"/>
+        <UnitName Value="Laz_AVL_Tree"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="32"/>
+        <CursorPos X="3" Y="46"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit10>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="773" Column="52" TopLine="745"/>
+        <Caret Line="1444" TopLine="1430"/>
       </Position1>
       <Position2>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="797" Column="16" TopLine="744"/>
+        <Caret Line="1446" TopLine="1430"/>
       </Position2>
       <Position3>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="127" Column="15" TopLine="110"/>
+        <Caret Line="1450" TopLine="1430"/>
       </Position3>
       <Position4>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="1299" Column="3" TopLine="1118"/>
+        <Caret Line="1451" TopLine="1430"/>
       </Position4>
       <Position5>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="800" Column="3" TopLine="791"/>
+        <Caret Line="1452" TopLine="1430"/>
       </Position5>
       <Position6>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="213" Column="25" TopLine="184"/>
+        <Caret Line="1414" TopLine="1399"/>
       </Position6>
       <Position7>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="775" TopLine="758"/>
+        <Caret Line="1417" TopLine="1399"/>
       </Position7>
       <Position8>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="800" Column="3" TopLine="782"/>
+        <Caret Line="1457" TopLine="1443"/>
       </Position8>
       <Position9>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="287" Column="10" TopLine="275"/>
+        <Caret Line="1414" TopLine="1399"/>
       </Position9>
       <Position10>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="213" Column="16" TopLine="195"/>
+        <Caret Line="1415" TopLine="1399"/>
       </Position10>
       <Position11>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="296" TopLine="288"/>
+        <Caret Line="1457" TopLine="1444"/>
       </Position11>
       <Position12>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="214" Column="12" TopLine="195"/>
+        <Caret Line="1458" TopLine="1444"/>
       </Position12>
       <Position13>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="321" Column="36" TopLine="310"/>
+        <Caret Line="1459" TopLine="1444"/>
       </Position13>
       <Position14>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="332" Column="46" TopLine="310"/>
+        <Caret Line="1460" TopLine="1444"/>
       </Position14>
       <Position15>
-        <Filename Value="nce.board.pas"/>
-        <Caret Line="839" Column="28" TopLine="822"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="1322" TopLine="1308"/>
       </Position15>
       <Position16>
-        <Filename Value="nce.board.pas"/>
-        <Caret Line="825" Column="26" TopLine="816"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="1323" TopLine="1308"/>
       </Position16>
       <Position17>
-        <Filename Value="nce.board.pas"/>
-        <Caret Line="822" Column="21" TopLine="807"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="1324" TopLine="1308"/>
       </Position17>
       <Position18>
-        <Filename Value="nce.board.pas"/>
-        <Caret Line="114" Column="16" TopLine="107"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="488" TopLine="474"/>
       </Position18>
       <Position19>
-        <Filename Value="nce.board.pas"/>
-        <Caret Line="649" Column="23" TopLine="626"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="489" TopLine="474"/>
       </Position19>
       <Position20>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="647" Column="40" TopLine="633"/>
+        <Caret Line="1414" TopLine="1399"/>
       </Position20>
       <Position21>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="839" Column="24" TopLine="818"/>
+        <Caret Line="1417" TopLine="1399"/>
       </Position21>
       <Position22>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="92" Column="5" TopLine="74"/>
+        <Caret Line="1457" TopLine="1444"/>
       </Position22>
       <Position23>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="11" Column="25"/>
+        <Caret Line="1469" TopLine="1446"/>
       </Position23>
       <Position24>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="849" Column="30" TopLine="830"/>
+        <Caret Line="1470" TopLine="1447"/>
       </Position24>
       <Position25>
-        <Filename Value="nce.lpr"/>
-        <Caret Line="144" Column="16" TopLine="137"/>
+        <Filename Value="/home/marcello/devtools/laz2/lazarus/components/lazutils/avglvltree.pas"/>
+        <Caret Line="490" TopLine="474"/>
       </Position25>
       <Position26>
-        <Filename Value="nce.lpr"/>
+        <Filename Value="nce.board.pas"/>
+        <Caret Line="1414" TopLine="1399"/>
       </Position26>
       <Position27>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="123" Column="15" TopLine="119"/>
+        <Caret Line="1435" Column="7" TopLine="1430"/>
       </Position27>
       <Position28>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="861" Column="57" TopLine="831"/>
+        <Caret Line="863" Column="3" TopLine="812"/>
       </Position28>
       <Position29>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="854" Column="38" TopLine="828"/>
+        <Caret Line="122" Column="16" TopLine="110"/>
       </Position29>
       <Position30>
         <Filename Value="nce.board.pas"/>
-        <Caret Line="860" Column="18" TopLine="837"/>
+        <Caret Line="790" Column="15" TopLine="778"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -209,7 +225,7 @@
       <Modes Count="1" ActiveMode="default">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="-l en --fen &quot;6&quot; -w 3 -x ALL"/>
+            <CommandLineParams Value="-l en --fen &quot;1&quot; -w 3 -x ALL"/>
           </local>
         </Mode0>
       </Modes>
@@ -222,7 +238,7 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="nce.board.pas"/>
-        <Line Value="1265"/>
+        <Line Value="1270"/>
       </Item1>
     </BreakPoints>
   </Debugging>

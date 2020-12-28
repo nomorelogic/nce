@@ -5,7 +5,7 @@ unit nce.board;
 interface
 
 uses
-  Classes, SysUtils, AvgLvlTree;
+  Classes, SysUtils, AvgLvlTree, Laz_AVL_Tree;
 
 type
   TPieceColor = (pcWhite, pcBlack);
@@ -766,8 +766,10 @@ var col: TBoardColType;
     sOutLine: string;
 begin
   // allocate resources
-  if not Assigned(ChildBoards) then
+  if not Assigned(ChildBoards) then begin
      ChildBoards:=TStringToPointerTree.Create(false);
+     ChildBoards.FreeValues:=true;
+  end;
 
   // init
   case ActiveColor of
@@ -857,8 +859,11 @@ begin
       ChildBoard.Board:=Board;
       WriteLn('create board ', s);
 
-      ChildBoards[ChildBoard.Name] := @ChildBoard;
-      WriteLn(ChildBoard.ToString(ChildBoard.ActiveColor, 1, ALang));
+      ChildBoards[s] := ChildBoard;
+      writeln('.ChildBoards.Count=', ChildBoards.Count);
+      // WriteLn(ChildBoard.ToString(ChildBoard.ActiveColor, 1, ALang));
+      ChildBoard:=TBoardObj(ChildBoards[s]);
+      writeln('.ChildBoards.Name=', ChildBoard.Name);
 
   end;
 
@@ -1399,7 +1404,60 @@ begin
 end;
 
 destructor TBoardObj.Destroy;
+{
+var xboard: TBoardObj;
+    scan:integer;
+    Node: TAvlTreeNode;
+    Item: PStringToPointerTreeItem; // PStringMapItem;
+    sl: TStringList;
+    s: string;
+}
 begin
+  // debug
+  if Assigned(ChildBoards) then
+     Writeln('<'+Name+'>', '.Destroy - ', ChildBoards.Count, ' childs')
+  else
+     Writeln('<'+Name+'>', '.Destroy - No child boards');
+
+
+  {
+  sl:=TStringList.Create;
+  ChildBoards.GetNames(sl);
+  try
+    for scan:=0 to sl.Count-1 do begin
+        s:=sl[scan];
+        writeln('- ', s);
+        // TBoardObj(ChildBoards[s]).Free;
+        xboard:=TBoardObj(ChildBoards[s]);
+        // ChildBoard:=TBoardObj(ChildBoards[s]);
+        // xboard.Free;
+        writeln('.deleting=', xboard.Name);
+        // FreeAndNil(xboard);
+
+    end;
+
+  finally
+    FreeAndNil(sl);
+  end;                                 // // // TObject(Item^.Value).Free;
+  }
+
+  { // funziona...
+  // for scan:=0 to ChildBoards.Count-1 do
+  //     writeln('- ', ChildBoards[scan].Name);
+  Node:=ChildBoards.Tree.FindLowest;
+  while Node<>nil do begin
+    // Item:=PStringMapItem(Node.Data);
+    Item:=PStringToPointerTreeItem(Node.Data);
+
+    // List.Add(Item^.Name);
+    // writeln('- ', Item^.Name);
+    xboard:=TBoardObj(ChildBoards.GetNodeData(Node));
+    writeln('- deleting ', Item^.Name);
+    TBoardObj(Item^.Value).Free;
+    Node:=Node.Successor;
+  end;
+  }
+
   if Assigned(ChildBoards) then begin
      ChildBoards.Clear;
      ChildBoards.Free;
